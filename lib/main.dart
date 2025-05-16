@@ -1,19 +1,19 @@
 import 'package:flutter/material.dart';
+import 'screens/inventario_page.dart';
 
 void main() {
-  runApp(const MyApp());
+  runApp(MyApp());
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key});
-
   @override
   Widget build(BuildContext context) {
-    return const MaterialApp(
-      debugShowCheckedModeBanner: false,
-      home: Scaffold(
-        
-      )
+    return MaterialApp(
+      title: 'Gestión de Inventarios',
+      theme: ThemeData(
+        primarySwatch: Colors.blue,
+      ),
+      home: InventarioPage(),
     );
   }
 }
