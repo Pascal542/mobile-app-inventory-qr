@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'views/pago_view.dart';
 
 void main() {
   runApp(const MyApp());
@@ -9,11 +10,12 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const MaterialApp(
-      debugShowCheckedModeBanner: false,
-      home: Scaffold(
-        
-      )
+    return MaterialApp(
+      title: 'App de Inventario',
+      theme: ThemeData(
+        primarySwatch: Colors.deepPurple,
+      ),
+      home: const PagoView(),
     );
   }
 }
