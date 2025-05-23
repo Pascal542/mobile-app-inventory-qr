@@ -25,10 +25,7 @@ class _LoginScreenState extends State<LoginScreen> {
     );
     if (response == true) {
       if (!mounted) return;
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => const MenuScreen()),
-      );
+      Navigator.pushReplacementNamed(context, '/home');
     } else {
       setState(() {
         isLoginTrue = true;
@@ -37,10 +34,7 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   void _navigateToHome() {
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(builder: (context) => const MenuScreen()),
-    );
+    Navigator.pushReplacementNamed(context, '/home');
   }
 
   @override

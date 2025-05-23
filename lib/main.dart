@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'features/auth/presentation/pages/login.dart';
 import 'features/sales/presentation/pages/home_page.dart';
 import 'features/sales/presentation/pages/boletas_facturas_page.dart';
 import 'features/sales/presentation/pages/boleta_form_page.dart';
@@ -54,7 +55,8 @@ class MyApp extends StatelessWidget {
       ),
       initialRoute: '/',
       routes: {
-        '/': (context) => const HomePage(),
+        '/': (context) => const LoginScreen(),
+        '/home': (context) => const HomePage(),
         '/boletas_facturas': (context) => const BoletasFacturasPage(),
         '/boleta_form': (context) => const BoletaFormPage(),
         '/factura_form': (context) => const FacturaFormPage(),
