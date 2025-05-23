@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../core/constants/api_constants.dart';
+import '../../core/constants/sales_api_constants.dart';
 
 class BoletaFormPage extends StatefulWidget {
   const BoletaFormPage({super.key});
