@@ -1,26 +1,45 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_application_1/Authentication/login.dart';
-import 'package:flutter_application_1/JsonModels/users.dart';
-import 'package:flutter_application_1/SQLite/sql.dart';
+import 'signup.dart';
+import '../../data/models/users.dart';
+import '../../../../core/data/sql.dart';
+import '../../../menu/presentation/pages/menu.dart';
 
-class SignUp extends StatefulWidget {
-  const SignUp({super.key});
+class LoginScreen extends StatefulWidget {
+  const LoginScreen({super.key});
 
   @override
-  State<SignUp> createState() => _SignUpState();
+  State<LoginScreen> createState() => _LoginScreenState();
 }
 
-class _SignUpState extends State<SignUp> {
+class _LoginScreenState extends State<LoginScreen> {
   final username = TextEditingController();
   final password = TextEditingController();
-  final confirmPassword = TextEditingController();
-  final formKey = GlobalKey<FormState>();
   bool isVisible = false;
+  bool isLoginTrue = false;
+  final db = DatabaseHelper();
+  final formKey = GlobalKey<FormState>();
+
+  login() async {
+    var response = await db.login(
+      Users(usrName: username.text, usrPassword: password.text),
+    );
+    if (response == true) {
+      if (!mounted) return;
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => const MenuScreen()),
+      );
+    } else {
+      setState(() {
+        isLoginTrue = true;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F7E6), // Color fondo claro
+      backgroundColor: const Color(0xFFF5F7E6), // Fondo suave
       body: Center(
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 30),
@@ -28,34 +47,22 @@ class _SignUpState extends State<SignUp> {
             key: formKey,
             child: Column(
               children: [
-                // Icono
-                Image.asset(
-                  "lib/assets/login.png",
-                  width: 100,
-                ),
+                // Icono tipo libreta
+                Image.asset("lib/assets/login.png", width: 100),
                 const SizedBox(height: 10),
 
+                // Título
                 const Text(
-                  "Vendify",
+                  'Vendify',
                   style: TextStyle(
                     fontSize: 36,
                     fontWeight: FontWeight.w900,
                     color: Colors.black,
                   ),
                 ),
-                const SizedBox(height: 20),
+                const SizedBox(height: 30),
 
-                const Text(
-                  "Crear nueva cuenta",
-                  style: TextStyle(
-                    fontSize: 22,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black87,
-                  ),
-                ),
-                const SizedBox(height: 25),
-
-                // Usuario
+                // Campo de usuario
                 Container(
                   margin: const EdgeInsets.only(bottom: 15),
                   padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -74,14 +81,14 @@ class _SignUpState extends State<SignUp> {
                         fontWeight: FontWeight.bold,
                       ),
                     ),
-                    validator: (value) =>
-                        value!.isEmpty ? 'Correo requerido' : null,
+                    validator:
+                        (value) => value!.isEmpty ? 'Correo requerido' : null,
                   ),
                 ),
 
-                // Contraseña
+                // Campo de contraseña
                 Container(
-                  margin: const EdgeInsets.only(bottom: 15),
+                  margin: const EdgeInsets.only(bottom: 20),
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   decoration: BoxDecoration(
                     color: const Color(0xFFD2C789),
@@ -100,9 +107,7 @@ class _SignUpState extends State<SignUp> {
                       ),
                       suffixIcon: IconButton(
                         icon: Icon(
-                          isVisible
-                              ? Icons.visibility
-                              : Icons.visibility_off,
+                          isVisible ? Icons.visibility : Icons.visibility_off,
                           color: Colors.grey[700],
                         ),
                         onPressed: () {
@@ -112,56 +117,13 @@ class _SignUpState extends State<SignUp> {
                         },
                       ),
                     ),
-                    validator: (value) =>
-                        value!.isEmpty ? 'Contraseña requerida' : null,
+                    validator:
+                        (value) =>
+                            value!.isEmpty ? 'Contraseña requerida' : null,
                   ),
                 ),
 
-                // Confirmar contraseña
-                Container(
-                  margin: const EdgeInsets.only(bottom: 25),
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFD2C789),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: TextFormField(
-                    controller: confirmPassword,
-                    obscureText: !isVisible,
-                    style: const TextStyle(color: Colors.black),
-                    decoration: InputDecoration(
-                      border: InputBorder.none,
-                      hintText: 'Confirmar contraseña',
-                      hintStyle: const TextStyle(
-                        color: Color(0xFF867A36),
-                        fontWeight: FontWeight.bold,
-                      ),
-                      suffixIcon: IconButton(
-                        icon: Icon(
-                          isVisible
-                              ? Icons.visibility
-                              : Icons.visibility_off,
-                          color: Colors.grey[700],
-                        ),
-                        onPressed: () {
-                          setState(() {
-                            isVisible = !isVisible;
-                          });
-                        },
-                      ),
-                    ),
-                    validator: (value) {
-                      if (value!.isEmpty) {
-                        return 'Confirmar contraseña requerida';
-                      } else if (password.text != confirmPassword.text) {
-                        return 'Las contraseñas no coinciden';
-                      }
-                      return null;
-                    },
-                  ),
-                ),
-
-                // Botón SIGN UP
+                // Botón LOGIN
                 SizedBox(
                   width: double.infinity,
                   height: 50,
@@ -174,24 +136,11 @@ class _SignUpState extends State<SignUp> {
                     ),
                     onPressed: () {
                       if (formKey.currentState!.validate()) {
-                        final db = DatabaseHelper();
-                        db
-                            .signup(Users(
-                              usrName: username.text,
-                              usrPassword: password.text,
-                            ))
-                            .whenComplete(() {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => const LoginScreen(),
-                            ),
-                          );
-                        });
+                        login();
                       }
                     },
                     child: const Text(
-                      'Registrarse',
+                      'Ingresar',
                       style: TextStyle(
                         color: Color(0xFF9E4C57),
                         fontWeight: FontWeight.bold,
@@ -200,14 +149,15 @@ class _SignUpState extends State<SignUp> {
                     ),
                   ),
                 ),
+
                 const SizedBox(height: 20),
 
-                // Enlace a login
+                // Enlace de registro
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     const Text(
-                      "¿Ya tienes una cuenta?",
+                      "¿No tienes cuenta?",
                       style: TextStyle(fontWeight: FontWeight.bold),
                     ),
                     TextButton(
@@ -215,12 +165,12 @@ class _SignUpState extends State<SignUp> {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (context) => const LoginScreen(),
+                            builder: (context) => const SignUp(),
                           ),
                         );
                       },
                       child: const Text(
-                        "Inicia sesión",
+                        "Regístrate",
                         style: TextStyle(
                           color: Color(0xFFDE5D6A),
                           fontWeight: FontWeight.bold,
@@ -229,6 +179,12 @@ class _SignUpState extends State<SignUp> {
                     ),
                   ],
                 ),
+
+                if (isLoginTrue)
+                  const Text(
+                    "Correo o contraseña incorrecta",
+                    style: TextStyle(color: Colors.red),
+                  ),
               ],
             ),
           ),

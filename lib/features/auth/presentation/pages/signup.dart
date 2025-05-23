@@ -1,42 +1,26 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_application_1/Authentication/signup.dart';
-import 'package:flutter_application_1/JsonModels/users.dart';
-import 'package:flutter_application_1/SQLite/sql.dart';
-import 'package:flutter_application_1/Views/menu.dart';
+import 'login.dart';
+import '../../data/models/users.dart';
+import '../../../../core/data/sql.dart';
 
-class LoginScreen extends StatefulWidget {
-  const LoginScreen({super.key});
+class SignUp extends StatefulWidget {
+  const SignUp({super.key});
 
   @override
-  State<LoginScreen> createState() => _LoginScreenState();
+  State<SignUp> createState() => _SignUpState();
 }
 
-class _LoginScreenState extends State<LoginScreen> {
+class _SignUpState extends State<SignUp> {
   final username = TextEditingController();
   final password = TextEditingController();
-  bool isVisible = false;
-  bool isLoginTrue = false;
-  final db = DatabaseHelper();
+  final confirmPassword = TextEditingController();
   final formKey = GlobalKey<FormState>();
-
-  login() async {
-    var response = await db
-        .login(Users(usrName: username.text, usrPassword: password.text));
-    if (response == true) {
-      if (!mounted) return;
-      Navigator.pushReplacement(
-          context, MaterialPageRoute(builder: (context) => const MenuScreen()));
-    } else {
-      setState(() {
-        isLoginTrue = true;
-      });
-    }
-  }
+  bool isVisible = false;
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F7E6), // Fondo suave
+      backgroundColor: const Color(0xFFF5F7E6), // Color fondo claro
       body: Center(
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 30),
@@ -44,25 +28,31 @@ class _LoginScreenState extends State<LoginScreen> {
             key: formKey,
             child: Column(
               children: [
-                // Icono tipo libreta
-                Image.asset(
-                  "lib/assets/login.png",
-                  width: 100,
-                ),
+                // Icono
+                Image.asset("lib/assets/login.png", width: 100),
                 const SizedBox(height: 10),
 
-                // Título
                 const Text(
-                  'Vendify',
+                  "Vendify",
                   style: TextStyle(
                     fontSize: 36,
                     fontWeight: FontWeight.w900,
                     color: Colors.black,
                   ),
                 ),
-                const SizedBox(height: 30),
+                const SizedBox(height: 20),
 
-                // Campo de usuario
+                const Text(
+                  "Crear nueva cuenta",
+                  style: TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black87,
+                  ),
+                ),
+                const SizedBox(height: 25),
+
+                // Usuario
                 Container(
                   margin: const EdgeInsets.only(bottom: 15),
                   padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -81,14 +71,14 @@ class _LoginScreenState extends State<LoginScreen> {
                         fontWeight: FontWeight.bold,
                       ),
                     ),
-                    validator: (value) =>
-                        value!.isEmpty ? 'Correo requerido' : null,
+                    validator:
+                        (value) => value!.isEmpty ? 'Correo requerido' : null,
                   ),
                 ),
 
-                // Campo de contraseña
+                // Contraseña
                 Container(
-                  margin: const EdgeInsets.only(bottom: 20),
+                  margin: const EdgeInsets.only(bottom: 15),
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   decoration: BoxDecoration(
                     color: const Color(0xFFD2C789),
@@ -107,9 +97,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                       suffixIcon: IconButton(
                         icon: Icon(
-                          isVisible
-                              ? Icons.visibility
-                              : Icons.visibility_off,
+                          isVisible ? Icons.visibility : Icons.visibility_off,
                           color: Colors.grey[700],
                         ),
                         onPressed: () {
@@ -119,12 +107,55 @@ class _LoginScreenState extends State<LoginScreen> {
                         },
                       ),
                     ),
-                    validator: (value) =>
-                        value!.isEmpty ? 'Contraseña requerida' : null,
+                    validator:
+                        (value) =>
+                            value!.isEmpty ? 'Contraseña requerida' : null,
                   ),
                 ),
 
-                // Botón LOGIN
+                // Confirmar contraseña
+                Container(
+                  margin: const EdgeInsets.only(bottom: 25),
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFD2C789),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: TextFormField(
+                    controller: confirmPassword,
+                    obscureText: !isVisible,
+                    style: const TextStyle(color: Colors.black),
+                    decoration: InputDecoration(
+                      border: InputBorder.none,
+                      hintText: 'Confirmar contraseña',
+                      hintStyle: const TextStyle(
+                        color: Color(0xFF867A36),
+                        fontWeight: FontWeight.bold,
+                      ),
+                      suffixIcon: IconButton(
+                        icon: Icon(
+                          isVisible ? Icons.visibility : Icons.visibility_off,
+                          color: Colors.grey[700],
+                        ),
+                        onPressed: () {
+                          setState(() {
+                            isVisible = !isVisible;
+                          });
+                        },
+                      ),
+                    ),
+                    validator: (value) {
+                      if (value!.isEmpty) {
+                        return 'Confirmar contraseña requerida';
+                      } else if (password.text != confirmPassword.text) {
+                        return 'Las contraseñas no coinciden';
+                      }
+                      return null;
+                    },
+                  ),
+                ),
+
+                // Botón SIGN UP
                 SizedBox(
                   width: double.infinity,
                   height: 50,
@@ -137,11 +168,26 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                     onPressed: () {
                       if (formKey.currentState!.validate()) {
-                        login();
+                        final db = DatabaseHelper();
+                        db
+                            .signup(
+                              Users(
+                                usrName: username.text,
+                                usrPassword: password.text,
+                              ),
+                            )
+                            .whenComplete(() {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => const LoginScreen(),
+                                ),
+                              );
+                            });
                       }
                     },
                     child: const Text(
-                      'Ingresar',
+                      'Registrarse',
                       style: TextStyle(
                         color: Color(0xFF9E4C57),
                         fontWeight: FontWeight.bold,
@@ -150,39 +196,35 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                   ),
                 ),
-
                 const SizedBox(height: 20),
 
-                // Enlace de registro
+                // Enlace a login
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Text("¿No tienes cuenta?",
-                        style: TextStyle(fontWeight: FontWeight.bold)),
+                    const Text(
+                      "¿Ya tienes una cuenta?",
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
                     TextButton(
                       onPressed: () {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                              builder: (context) => const SignUp()),
+                            builder: (context) => const LoginScreen(),
+                          ),
                         );
                       },
                       child: const Text(
-                        "Regístrate",
+                        "Inicia sesión",
                         style: TextStyle(
                           color: Color(0xFFDE5D6A),
                           fontWeight: FontWeight.bold,
                         ),
                       ),
-                    )
+                    ),
                   ],
                 ),
-
-                if (isLoginTrue)
-                  const Text(
-                    "Correo o contraseña incorrecta",
-                    style: TextStyle(color: Colors.red),
-                  )
               ],
             ),
           ),

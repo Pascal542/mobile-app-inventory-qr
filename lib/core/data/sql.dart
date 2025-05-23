@@ -1,7 +1,7 @@
-import 'package:flutter_application_1/JsonModels/note_model.dart';
-import 'package:flutter_application_1/JsonModels/users.dart';
-import 'package:path/path.dart';
 import 'package:sqflite/sqflite.dart';
+import 'package:path/path.dart';
+import '../../features/auth/data/models/users.dart';
+import '../models/note_model.dart';
 
 class DatabaseHelper {
   final databaseName = "notes.db";
@@ -19,10 +19,14 @@ class DatabaseHelper {
     final databasePath = await getDatabasesPath();
     final path = join(databasePath, databaseName);
 
-    return openDatabase(path, version: 1, onCreate: (db, version) async {
-      await db.execute(users);
-      await db.execute(noteTable);
-    });
+    return openDatabase(
+      path,
+      version: 1,
+      onCreate: (db, version) async {
+        await db.execute(users);
+        await db.execute(noteTable);
+      },
+    );
   }
 
   //Now we create login and sign up method
@@ -37,7 +41,8 @@ class DatabaseHelper {
 
     // I forgot the password to check
     var result = await db.rawQuery(
-        "select * from users where usrName = '${user.usrName}' AND usrPassword = '${user.usrPassword}'");
+      "select * from users where usrName = '${user.usrName}' AND usrPassword = '${user.usrPassword}'",
+    );
     if (result.isNotEmpty) {
       return true;
     } else {
@@ -55,8 +60,10 @@ class DatabaseHelper {
   //Search Method
   Future<List<NoteModel>> searchNotes(String keyword) async {
     final Database db = await initDB();
-    List<Map<String, Object?>> searchResult = await db
-        .rawQuery("select * from notes where noteTitle LIKE ?", ["%$keyword%"]);
+    List<Map<String, Object?>> searchResult = await db.rawQuery(
+      "select * from notes where noteTitle LIKE ?",
+      ["%$keyword%"],
+    );
     return searchResult.map((e) => NoteModel.fromMap(e)).toList();
   }
 
@@ -85,8 +92,8 @@ class DatabaseHelper {
   Future<int> updateNote(title, content, noteId) async {
     final Database db = await initDB();
     return db.rawUpdate(
-        'update notes set noteTitle = ?, noteContent = ? where noteId = ?',
-        [title, content, noteId]);
+      'update notes set noteTitle = ?, noteContent = ? where noteId = ?',
+      [title, content, noteId],
+    );
   }
 }
-  
