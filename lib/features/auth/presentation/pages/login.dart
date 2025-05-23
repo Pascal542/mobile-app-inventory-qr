@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'signup.dart';
 import '../../data/models/users.dart';
 import '../../../../core/data/sql.dart';
-import '../../../menu/presentation/pages/menu.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -12,206 +12,110 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  final username = TextEditingController();
-  final password = TextEditingController();
+  final _formKey = GlobalKey<FormState>();
+  final _emailCtrl = TextEditingController();
+  final _passwordCtrl = TextEditingController();
   bool isVisible = false;
   bool isLoginTrue = false;
   final db = DatabaseHelper();
-  final formKey = GlobalKey<FormState>();
 
-  login() async {
-    var response = await db.login(
-      Users(usrName: username.text, usrPassword: password.text),
-    );
-    if (response == true) {
-      if (!mounted) return;
-      Navigator.pushReplacementNamed(context, '/home');
-    } else {
-      setState(() {
-        isLoginTrue = true;
-      });
+  @override
+  void dispose() {
+    _emailCtrl.dispose();
+    _passwordCtrl.dispose();
+    super.dispose();
+  }
+
+  void _login() async {
+    if (_formKey.currentState!.validate()) {
+      var response = await db.login(
+        Users(usrName: _emailCtrl.text, usrPassword: _passwordCtrl.text),
+      );
+      if (response == true) {
+        if (!mounted) return;
+        context.go('/home');
+      } else {
+        setState(() {
+          isLoginTrue = true;
+        });
+      }
     }
   }
 
   void _navigateToHome() {
-    Navigator.pushReplacementNamed(context, '/home');
+    context.go('/home');
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F7E6), // Fondo suave
-      body: Center(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 30),
-          child: Form(
-            key: formKey,
-            child: Column(
-              children: [
-                // Icono tipo libreta
-                Image.asset("lib/assets/login.png", width: 100),
-                const SizedBox(height: 10),
-
-                // Título
-                const Text(
-                  'Vendify',
-                  style: TextStyle(
-                    fontSize: 36,
-                    fontWeight: FontWeight.w900,
-                    color: Colors.black,
-                  ),
-                ),
-                const SizedBox(height: 30),
-
-                // Campo de usuario
-                Container(
-                  margin: const EdgeInsets.only(bottom: 15),
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFD2C789),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: TextFormField(
-                    controller: username,
-                    style: const TextStyle(color: Colors.black),
-                    decoration: const InputDecoration(
-                      border: InputBorder.none,
-                      hintText: 'Correo',
-                      hintStyle: TextStyle(
-                        color: Color(0xFF867A36),
-                        fontWeight: FontWeight.bold,
+      body: SafeArea(
+        child: Center(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(16),
+            child: Card(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Form(
+                  key: _formKey,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Image.asset(
+                        "lib/assets/login.png",
+                        width: 100,
                       ),
-                    ),
-                    validator:
-                        (value) => value!.isEmpty ? 'Correo requerido' : null,
-                  ),
-                ),
-
-                // Campo de contraseña
-                Container(
-                  margin: const EdgeInsets.only(bottom: 20),
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFD2C789),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: TextFormField(
-                    controller: password,
-                    obscureText: !isVisible,
-                    style: const TextStyle(color: Colors.black),
-                    decoration: InputDecoration(
-                      border: InputBorder.none,
-                      hintText: 'Contraseña',
-                      hintStyle: const TextStyle(
-                        color: Color(0xFF867A36),
-                        fontWeight: FontWeight.bold,
+                      const SizedBox(height: 24),
+                      Text(
+                        'Iniciar Sesión',
+                        style: Theme.of(context).textTheme.titleLarge,
                       ),
-                      suffixIcon: IconButton(
-                        icon: Icon(
-                          isVisible ? Icons.visibility : Icons.visibility_off,
-                          color: Colors.grey[700],
+                      const SizedBox(height: 24),
+                      TextFormField(
+                        controller: _emailCtrl,
+                        decoration: const InputDecoration(
+                          labelText: 'Correo',
+                          prefixIcon: Icon(Icons.email),
                         ),
-                        onPressed: () {
-                          setState(() {
-                            isVisible = !isVisible;
-                          });
-                        },
+                        keyboardType: TextInputType.emailAddress,
+                        validator: (v) =>
+                            v == null || v.isEmpty ? 'Obligatorio' : null,
                       ),
-                    ),
-                    validator:
-                        (value) =>
-                            value!.isEmpty ? 'Contraseña requerida' : null,
-                  ),
-                ),
-
-                // Botón LOGIN
-                SizedBox(
-                  width: double.infinity,
-                  height: 50,
-                  child: TextButton(
-                    style: TextButton.styleFrom(
-                      backgroundColor: const Color(0xFFD2C789),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                    ),
-                    onPressed: () {
-                      if (formKey.currentState!.validate()) {
-                        login();
-                      }
-                    },
-                    child: const Text(
-                      'Ingresar',
-                      style: TextStyle(
-                        color: Color(0xFF9E4C57),
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
-                      ),
-                    ),
-                  ),
-                ),
-
-                const SizedBox(height: 20),
-
-                // Botón para ir directamente a Home
-                SizedBox(
-                  width: double.infinity,
-                  height: 50,
-                  child: TextButton(
-                    style: TextButton.styleFrom(
-                      backgroundColor: const Color(0xFF9E4C57),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                    ),
-                    onPressed: _navigateToHome,
-                    child: const Text(
-                      'Ir a Home',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
-                      ),
-                    ),
-                  ),
-                ),
-
-                const SizedBox(height: 20),
-
-                // Enlace de registro
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Text(
-                      "¿No tienes cuenta?",
-                      style: TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                    TextButton(
-                      onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => const SignUp(),
-                          ),
-                        );
-                      },
-                      child: const Text(
-                        "Regístrate",
-                        style: TextStyle(
-                          color: Color(0xFFDE5D6A),
-                          fontWeight: FontWeight.bold,
+                      const SizedBox(height: 16),
+                      TextFormField(
+                        controller: _passwordCtrl,
+                        decoration: const InputDecoration(
+                          labelText: 'Contraseña',
+                          prefixIcon: Icon(Icons.lock),
                         ),
+                        obscureText: !isVisible,
+                        validator: (v) =>
+                            v == null || v.isEmpty ? 'Obligatorio' : null,
                       ),
-                    ),
-                  ],
-                ),
-
-                if (isLoginTrue)
-                  const Text(
-                    "Correo o contraseña incorrecta",
-                    style: TextStyle(color: Colors.red),
+                      const SizedBox(height: 24),
+                      ElevatedButton(
+                        onPressed: _login,
+                        child: const Text('Ingresar'),
+                      ),
+                      const SizedBox(height: 16),
+                      TextButton(
+                        onPressed: () => context.push('/signup'),
+                        child: const Text('¿No tienes cuenta? Regístrate'),
+                      ),
+                      const SizedBox(height: 8),
+                      TextButton(
+                        onPressed: _navigateToHome,
+                        child: const Text('Ir al Home'),
+                      ),
+                      if (isLoginTrue)
+                        const Text(
+                          "Correo o contraseña incorrecta",
+                          style: TextStyle(color: Colors.red),
+                        ),
+                    ],
                   ),
-              ],
+                ),
+              ),
             ),
           ),
         ),

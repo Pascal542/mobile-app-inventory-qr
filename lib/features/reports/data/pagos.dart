@@ -2,6 +2,46 @@ import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:intl/intl.dart';
 
+class Pago {
+  final String cliente;
+  final double monto;
+  final String fecha;
+
+  Pago({
+    required this.cliente,
+    required this.monto,
+    required this.fecha,
+  });
+}
+
+final List<Pago> pagos = [
+  Pago(
+    cliente: 'Juan Pérez',
+    monto: 150.00,
+    fecha: '01/03/2024',
+  ),
+  Pago(
+    cliente: 'María García',
+    monto: 275.50,
+    fecha: '28/02/2024',
+  ),
+  Pago(
+    cliente: 'Carlos López',
+    monto: 320.75,
+    fecha: '27/02/2024',
+  ),
+  Pago(
+    cliente: 'Ana Martínez',
+    monto: 180.25,
+    fecha: '26/02/2024',
+  ),
+  Pago(
+    cliente: 'Roberto Sánchez',
+    monto: 420.00,
+    fecha: '25/02/2024',
+  ),
+];
+
 class ReportePagos extends StatefulWidget {
   const ReportePagos({super.key});
 
@@ -143,7 +183,11 @@ class IngresosGrafico extends StatelessWidget {
     return BarChart(
       BarChartData(
         alignment: BarChartAlignment.spaceAround,
-        maxY: datos.map((e) => e['ingreso'] as num).reduce((a, b) => a > b ? a : b).toDouble() + 500,
+        maxY: datos
+                .map((e) => e['ingreso'] as num)
+                .reduce((a, b) => a > b ? a : b)
+                .toDouble() +
+            500,
         titlesData: FlTitlesData(
           leftTitles: AxisTitles(
             sideTitles: SideTitles(
@@ -247,11 +291,11 @@ class PagosHistorial extends StatelessWidget {
       children: pagos
           .map(
             (pago) => ListTile(
-          title: Text('Fecha: ${pago['fecha']}'),
-          subtitle: Text('Estado: ${pago['estado']}'),
-          trailing: Text('S/${pago['monto']}'),
-        ),
-      )
+              title: Text('Fecha: ${pago['fecha']}'),
+              subtitle: Text('Estado: ${pago['estado']}'),
+              trailing: Text('S/${pago['monto']}'),
+            ),
+          )
           .toList(),
     );
   }

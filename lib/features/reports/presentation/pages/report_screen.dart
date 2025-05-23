@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import '../../data/general.dart';
 import '../../data/inventario.dart';
 import '../../data/pagos.dart';
@@ -12,13 +13,15 @@ class ReporteScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: const Color(0xFFF8F3FF),
       appBar: AppBar(
-        title: const Text(
-          '📁 Reportes',
-          style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-        ),
+        title: const Text('📁 Reportes',
+            style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
         centerTitle: true,
         backgroundColor: Colors.deepPurple,
         foregroundColor: Colors.white,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => context.go('/home'),
+        ),
       ),
       body: Center(
         child: SingleChildScrollView(
@@ -31,13 +34,10 @@ class ReporteScreen extends StatelessWidget {
                   icon: Icons.bar_chart,
                   label: 'Reporte General',
                   color: Colors.indigoAccent,
-                  onPressed:
-                      () => Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => const ReporteGeneral(),
-                        ),
-                      ),
+                  onPressed: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (_) => const ReporteGeneral())),
                 ),
                 const SizedBox(height: 20),
                 _reporteButton(
@@ -45,13 +45,10 @@ class ReporteScreen extends StatelessWidget {
                   icon: Icons.inventory,
                   label: 'Reporte de Inventario',
                   color: Colors.orangeAccent,
-                  onPressed:
-                      () => Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => const ReporteInventario(),
-                        ),
-                      ),
+                  onPressed: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (_) => const ReporteInventario())),
                 ),
                 const SizedBox(height: 20),
                 _reporteButton(
@@ -59,11 +56,8 @@ class ReporteScreen extends StatelessWidget {
                   icon: Icons.attach_money,
                   label: 'Reporte de Pagos',
                   color: Colors.greenAccent.shade400,
-                  onPressed:
-                      () => Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (_) => const ReportePagos()),
-                      ),
+                  onPressed: () => Navigator.push(context,
+                      MaterialPageRoute(builder: (_) => const ReportePagos())),
                 ),
                 const SizedBox(height: 20),
                 _reporteButton(
@@ -71,11 +65,8 @@ class ReporteScreen extends StatelessWidget {
                   icon: Icons.picture_as_pdf,
                   label: 'Reporte en PDF',
                   color: Colors.blueAccent,
-                  onPressed:
-                      () => Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (_) => const GenerarPDF()),
-                      ),
+                  onPressed: () => Navigator.push(context,
+                      MaterialPageRoute(builder: (_) => const GenerarPDF())),
                 ),
               ],
             ),
@@ -85,13 +76,11 @@ class ReporteScreen extends StatelessWidget {
     );
   }
 
-  Widget _reporteButton(
-    BuildContext context, {
-    required IconData icon,
-    required String label,
-    required Color color,
-    required VoidCallback onPressed,
-  }) {
+  Widget _reporteButton(BuildContext context,
+      {required IconData icon,
+      required String label,
+      required Color color,
+      required VoidCallback onPressed}) {
     return SizedBox(
       width: double.infinity,
       child: ElevatedButton.icon(
@@ -107,9 +96,8 @@ class ReporteScreen extends StatelessWidget {
         style: ElevatedButton.styleFrom(
           foregroundColor: Colors.white,
           backgroundColor: color,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-          ),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           elevation: 6,
         ),
       ),

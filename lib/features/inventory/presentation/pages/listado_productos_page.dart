@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../data/models/producto.dart';
 import 'agregar_producto_page.dart';
 import 'modificar_producto_page.dart';
+import 'package:go_router/go_router.dart';
 
 class ListadoProductosPage extends StatefulWidget {
   @override
@@ -15,7 +16,11 @@ class _ListadoProductosPageState extends State<ListadoProductosPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Listado de Productos'),
+        title: const Text('Listado de Productos'),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => context.go('/home'),
+        ),
         actions: [
           IconButton(
             icon: Icon(Icons.add),
@@ -34,40 +39,37 @@ class _ListadoProductosPageState extends State<ListadoProductosPage> {
           ),
         ],
       ),
-      body:
-          productos.isEmpty
-              ? Center(child: Text('No hay productos aún'))
-              : ListView.builder(
-                itemCount: productos.length,
-                itemBuilder: (context, index) {
-                  final producto = productos[index];
-                  return ListTile(
-                    title: Text(producto.nombre),
-                    subtitle: Text('Cantidad: ${producto.cantidad}'),
-                    trailing: IconButton(
-                      icon: Icon(Icons.edit),
-                      onPressed: () async {
-                        // Navegar a modificar producto y esperar el producto modificado
-                        final productoModificado =
-                            await Navigator.push<Producto>(
-                              context,
-                              MaterialPageRoute(
-                                builder:
-                                    (context) => ModificarProductoPage(
-                                      producto: producto,
-                                    ),
-                              ),
-                            );
-                        if (productoModificado != null) {
-                          setState(() {
-                            productos[index] = productoModificado;
-                          });
-                        }
-                      },
-                    ),
-                  );
-                },
-              ),
+      body: productos.isEmpty
+          ? Center(child: Text('No hay productos aún'))
+          : ListView.builder(
+              itemCount: productos.length,
+              itemBuilder: (context, index) {
+                final producto = productos[index];
+                return ListTile(
+                  title: Text(producto.nombre),
+                  subtitle: Text('Cantidad: ${producto.cantidad}'),
+                  trailing: IconButton(
+                    icon: Icon(Icons.edit),
+                    onPressed: () async {
+                      // Navegar a modificar producto y esperar el producto modificado
+                      final productoModificado = await Navigator.push<Producto>(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => ModificarProductoPage(
+                            producto: producto,
+                          ),
+                        ),
+                      );
+                      if (productoModificado != null) {
+                        setState(() {
+                          productos[index] = productoModificado;
+                        });
+                      }
+                    },
+                  ),
+                );
+              },
+            ),
     );
   }
 }

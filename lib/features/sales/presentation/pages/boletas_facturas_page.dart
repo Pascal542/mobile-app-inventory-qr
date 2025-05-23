@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 class BoletasFacturasPage extends StatelessWidget {
   const BoletasFacturasPage({super.key});
@@ -6,18 +7,24 @@ class BoletasFacturasPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Boletas y Facturas')),
+      appBar: AppBar(
+        title: const Text('Boletas y Facturas'),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => context.go('/home'),
+        ),
+      ),
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             ElevatedButton(
-              onPressed: () => Navigator.pushNamed(context, '/boleta_form'),
+              onPressed: () => context.go('/boleta_form'),
               child: const Text('Crear Boleta'),
             ),
             const SizedBox(height: 16),
             ElevatedButton(
-              onPressed: () => Navigator.pushNamed(context, '/factura_form'),
+              onPressed: () => context.go('/factura_form'),
               child: const Text('Crear Factura'),
             ),
           ],
@@ -25,4 +32,4 @@ class BoletasFacturasPage extends StatelessWidget {
       ),
     );
   }
-} 
+}

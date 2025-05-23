@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import '../../core/constants/sales_api_constants.dart';
 
 class FacturaFormPage extends StatefulWidget {
@@ -69,8 +70,7 @@ class _FacturaFormPageState extends State<FacturaFormPage> {
               },
               'cbc:LineExtensionAmount': {
                 '_attributes': {'currencyID': 'PEN'},
-                '_text':
-                    double.parse(_quantityCtrl.text) *
+                '_text': double.parse(_quantityCtrl.text) *
                     double.parse(_priceCtrl.text),
               },
               'cac:Item': {
@@ -88,21 +88,24 @@ class _FacturaFormPageState extends State<FacturaFormPage> {
       };
       print(payload);
       // TODO: enviar a la API usando tu cliente HTTP
+      context.go('/boletas_facturas');
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Crear Factura')),
+      appBar: AppBar(
+        title: const Text('Crear Factura'),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => context.go('/boletas_facturas'),
+        ),
+      ),
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(16),
           child: Card(
-            elevation: 4,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
             child: Padding(
               padding: const EdgeInsets.all(16),
               child: Form(
@@ -112,7 +115,7 @@ class _FacturaFormPageState extends State<FacturaFormPage> {
                   children: [
                     Text(
                       'Detalles de Factura',
-                      style: Theme.of(context).textTheme.titleMedium,
+                      style: Theme.of(context).textTheme.titleLarge,
                     ),
                     const SizedBox(height: 16),
                     TextFormField(
@@ -121,18 +124,18 @@ class _FacturaFormPageState extends State<FacturaFormPage> {
                         labelText: 'RUC',
                         prefixIcon: Icon(Icons.business),
                       ),
-                      validator:
-                          (v) => v == null || v.isEmpty ? 'Obligatorio' : null,
+                      validator: (v) =>
+                          v == null || v.isEmpty ? 'Obligatorio' : null,
                     ),
                     const SizedBox(height: 16),
                     TextFormField(
                       controller: _customerNameCtrl,
                       decoration: const InputDecoration(
-                        labelText: 'Nombre Cliente',
-                        prefixIcon: Icon(Icons.person_outline),
+                        labelText: 'Razón Social',
+                        prefixIcon: Icon(Icons.business_outlined),
                       ),
-                      validator:
-                          (v) => v == null || v.isEmpty ? 'Obligatorio' : null,
+                      validator: (v) =>
+                          v == null || v.isEmpty ? 'Obligatorio' : null,
                     ),
                     const SizedBox(height: 16),
                     TextFormField(
@@ -142,8 +145,8 @@ class _FacturaFormPageState extends State<FacturaFormPage> {
                         prefixIcon: Icon(Icons.confirmation_number),
                       ),
                       keyboardType: TextInputType.number,
-                      validator:
-                          (v) => v == null || v.isEmpty ? 'Obligatorio' : null,
+                      validator: (v) =>
+                          v == null || v.isEmpty ? 'Obligatorio' : null,
                     ),
                     const SizedBox(height: 16),
                     TextFormField(
@@ -153,26 +156,23 @@ class _FacturaFormPageState extends State<FacturaFormPage> {
                         prefixIcon: Icon(Icons.attach_money),
                       ),
                       keyboardType: TextInputType.number,
-                      validator:
-                          (v) => v == null || v.isEmpty ? 'Obligatorio' : null,
+                      validator: (v) =>
+                          v == null || v.isEmpty ? 'Obligatorio' : null,
                     ),
                     const SizedBox(height: 16),
                     TextFormField(
                       controller: _descriptionCtrl,
                       decoration: const InputDecoration(
-                        labelText: 'Descripción Ítem',
+                        labelText: 'Producto',
                         prefixIcon: Icon(Icons.description),
                       ),
-                      validator:
-                          (v) => v == null || v.isEmpty ? 'Obligatorio' : null,
+                      validator: (v) =>
+                          v == null || v.isEmpty ? 'Obligatorio' : null,
                     ),
                     const SizedBox(height: 24),
                     ElevatedButton(
                       onPressed: _submit,
-                      child: const Padding(
-                        padding: EdgeInsets.symmetric(vertical: 12),
-                        child: Text('Enviar Factura'),
-                      ),
+                      child: const Text('Enviar Factura'),
                     ),
                   ],
                 ),

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'login.dart';
+import 'package:go_router/go_router.dart';
 import '../../data/models/users.dart';
 import '../../../../core/data/sql.dart';
 
@@ -11,221 +11,123 @@ class SignUp extends StatefulWidget {
 }
 
 class _SignUpState extends State<SignUp> {
-  final username = TextEditingController();
-  final password = TextEditingController();
-  final confirmPassword = TextEditingController();
-  final formKey = GlobalKey<FormState>();
-  bool isVisible = false;
+  final _formKey = GlobalKey<FormState>();
+  final _emailCtrl = TextEditingController();
+  final _passwordCtrl = TextEditingController();
+  final _confirmPasswordCtrl = TextEditingController();
+  final db = DatabaseHelper();
+
+  @override
+  void dispose() {
+    _emailCtrl.dispose();
+    _passwordCtrl.dispose();
+    _confirmPasswordCtrl.dispose();
+    super.dispose();
+  }
+
+  void _signup() async {
+    if (_formKey.currentState!.validate()) {
+      if (_passwordCtrl.text == _confirmPasswordCtrl.text) {
+        var response = await db.signup(
+          Users(usrName: _emailCtrl.text, usrPassword: _passwordCtrl.text),
+        );
+        if (response == true) {
+          if (!mounted) return;
+          context.go('/login');
+        } else {
+          if (!mounted) return;
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Error al registrar usuario'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Las contraseñas no coinciden'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F7E6), // Color fondo claro
-      body: Center(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 30),
-          child: Form(
-            key: formKey,
-            child: Column(
-              children: [
-                // Icono
-                Image.asset("lib/assets/login.png", width: 100),
-                const SizedBox(height: 10),
-
-                const Text(
-                  "Vendify",
-                  style: TextStyle(
-                    fontSize: 36,
-                    fontWeight: FontWeight.w900,
-                    color: Colors.black,
-                  ),
-                ),
-                const SizedBox(height: 20),
-
-                const Text(
-                  "Crear nueva cuenta",
-                  style: TextStyle(
-                    fontSize: 22,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black87,
-                  ),
-                ),
-                const SizedBox(height: 25),
-
-                // Usuario
-                Container(
-                  margin: const EdgeInsets.only(bottom: 15),
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFD2C789),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: TextFormField(
-                    controller: username,
-                    style: const TextStyle(color: Colors.black),
-                    decoration: const InputDecoration(
-                      border: InputBorder.none,
-                      hintText: 'Correo',
-                      hintStyle: TextStyle(
-                        color: Color(0xFF867A36),
-                        fontWeight: FontWeight.bold,
+      appBar: AppBar(
+        title: const Text('Registro'),
+      ),
+      body: SafeArea(
+        child: Center(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(16),
+            child: Card(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Form(
+                  key: _formKey,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Image.asset(
+                        "lib/assets/login.png",
+                        width: 100,
                       ),
-                    ),
-                    validator:
-                        (value) => value!.isEmpty ? 'Correo requerido' : null,
-                  ),
-                ),
-
-                // Contraseña
-                Container(
-                  margin: const EdgeInsets.only(bottom: 15),
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFD2C789),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: TextFormField(
-                    controller: password,
-                    obscureText: !isVisible,
-                    style: const TextStyle(color: Colors.black),
-                    decoration: InputDecoration(
-                      border: InputBorder.none,
-                      hintText: 'Contraseña',
-                      hintStyle: const TextStyle(
-                        color: Color(0xFF867A36),
-                        fontWeight: FontWeight.bold,
+                      const SizedBox(height: 24),
+                      Text(
+                        'Crear Cuenta',
+                        style: Theme.of(context).textTheme.titleLarge,
                       ),
-                      suffixIcon: IconButton(
-                        icon: Icon(
-                          isVisible ? Icons.visibility : Icons.visibility_off,
-                          color: Colors.grey[700],
+                      const SizedBox(height: 24),
+                      TextFormField(
+                        controller: _emailCtrl,
+                        decoration: const InputDecoration(
+                          labelText: 'Correo',
+                          prefixIcon: Icon(Icons.email),
                         ),
-                        onPressed: () {
-                          setState(() {
-                            isVisible = !isVisible;
-                          });
-                        },
+                        keyboardType: TextInputType.emailAddress,
+                        validator: (v) =>
+                            v == null || v.isEmpty ? 'Obligatorio' : null,
                       ),
-                    ),
-                    validator:
-                        (value) =>
-                            value!.isEmpty ? 'Contraseña requerida' : null,
-                  ),
-                ),
-
-                // Confirmar contraseña
-                Container(
-                  margin: const EdgeInsets.only(bottom: 25),
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFD2C789),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: TextFormField(
-                    controller: confirmPassword,
-                    obscureText: !isVisible,
-                    style: const TextStyle(color: Colors.black),
-                    decoration: InputDecoration(
-                      border: InputBorder.none,
-                      hintText: 'Confirmar contraseña',
-                      hintStyle: const TextStyle(
-                        color: Color(0xFF867A36),
-                        fontWeight: FontWeight.bold,
-                      ),
-                      suffixIcon: IconButton(
-                        icon: Icon(
-                          isVisible ? Icons.visibility : Icons.visibility_off,
-                          color: Colors.grey[700],
+                      const SizedBox(height: 16),
+                      TextFormField(
+                        controller: _passwordCtrl,
+                        decoration: const InputDecoration(
+                          labelText: 'Contraseña',
+                          prefixIcon: Icon(Icons.lock),
                         ),
-                        onPressed: () {
-                          setState(() {
-                            isVisible = !isVisible;
-                          });
-                        },
+                        obscureText: true,
+                        validator: (v) =>
+                            v == null || v.isEmpty ? 'Obligatorio' : null,
                       ),
-                    ),
-                    validator: (value) {
-                      if (value!.isEmpty) {
-                        return 'Confirmar contraseña requerida';
-                      } else if (password.text != confirmPassword.text) {
-                        return 'Las contraseñas no coinciden';
-                      }
-                      return null;
-                    },
-                  ),
-                ),
-
-                // Botón SIGN UP
-                SizedBox(
-                  width: double.infinity,
-                  height: 50,
-                  child: TextButton(
-                    style: TextButton.styleFrom(
-                      backgroundColor: const Color(0xFFD2C789),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                    ),
-                    onPressed: () {
-                      if (formKey.currentState!.validate()) {
-                        final db = DatabaseHelper();
-                        db
-                            .signup(
-                              Users(
-                                usrName: username.text,
-                                usrPassword: password.text,
-                              ),
-                            )
-                            .whenComplete(() {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => const LoginScreen(),
-                                ),
-                              );
-                            });
-                      }
-                    },
-                    child: const Text(
-                      'Registrarse',
-                      style: TextStyle(
-                        color: Color(0xFF9E4C57),
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 20),
-
-                // Enlace a login
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Text(
-                      "¿Ya tienes una cuenta?",
-                      style: TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                    TextButton(
-                      onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => const LoginScreen(),
-                          ),
-                        );
-                      },
-                      child: const Text(
-                        "Inicia sesión",
-                        style: TextStyle(
-                          color: Color(0xFFDE5D6A),
-                          fontWeight: FontWeight.bold,
+                      const SizedBox(height: 16),
+                      TextFormField(
+                        controller: _confirmPasswordCtrl,
+                        decoration: const InputDecoration(
+                          labelText: 'Confirmar Contraseña',
+                          prefixIcon: Icon(Icons.lock_outline),
                         ),
+                        obscureText: true,
+                        validator: (v) =>
+                            v == null || v.isEmpty ? 'Obligatorio' : null,
                       ),
-                    ),
-                  ],
+                      const SizedBox(height: 24),
+                      ElevatedButton(
+                        onPressed: _signup,
+                        child: const Text('Registrarse'),
+                      ),
+                      const SizedBox(height: 16),
+                      TextButton(
+                        onPressed: () => context.go('/login'),
+                        child: const Text('¿Ya tienes cuenta? Inicia sesión'),
+                      ),
+                    ],
+                  ),
                 ),
-              ],
+              ),
             ),
           ),
         ),

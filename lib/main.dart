@@ -1,66 +1,157 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import 'features/auth/presentation/pages/login.dart';
-import 'features/sales/presentation/pages/home_page.dart';
-import 'features/sales/presentation/pages/boletas_facturas_page.dart';
-import 'features/sales/presentation/pages/boleta_form_page.dart';
-import 'features/sales/presentation/pages/factura_form_page.dart';
+import 'package:go_router/go_router.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:mobile_app_inventory_qr/features/auth/presentation/pages/login.dart';
+import 'package:mobile_app_inventory_qr/features/auth/presentation/pages/signup.dart';
+import 'package:mobile_app_inventory_qr/features/inventory/presentation/pages/listado_productos_page.dart';
+import 'package:mobile_app_inventory_qr/features/qr/presentation/pages/qr_page.dart';
+import 'package:mobile_app_inventory_qr/features/reports/presentation/pages/report_screen.dart';
+import 'package:mobile_app_inventory_qr/features/sales/presentation/pages/boletas_facturas_page.dart';
+import 'package:mobile_app_inventory_qr/features/sales/presentation/pages/home_page.dart';
+import 'package:mobile_app_inventory_qr/features/sales/presentation/pages/boleta_form_page.dart';
+import 'package:mobile_app_inventory_qr/features/sales/presentation/pages/factura_form_page.dart';
 
 void main() {
-  SystemChrome.setSystemUIOverlayStyle(
-    const SystemUiOverlayStyle(
-      statusBarColor: Colors.transparent,
-      statusBarBrightness: Brightness.dark,
-      systemNavigationBarColor: Colors.transparent,
-      systemNavigationBarDividerColor: Colors.transparent,
-      systemNavigationBarIconBrightness: Brightness.dark,
-      statusBarIconBrightness: Brightness.dark,
-    ),
-  );
   runApp(const MyApp());
 }
+
+final _router = GoRouter(
+  initialLocation: '/login',
+  routes: [
+    GoRoute(path: '/login', builder: (context, state) => const LoginScreen()),
+    GoRoute(path: '/signup', builder: (context, state) => const SignUp()),
+    GoRoute(path: '/home', builder: (context, state) => const HomePage()),
+    GoRoute(
+        path: '/boletas_facturas',
+        builder: (context, state) => const BoletasFacturasPage()),
+    GoRoute(
+        path: '/boleta_form',
+        builder: (context, state) => const BoletaFormPage()),
+    GoRoute(
+        path: '/factura_form',
+        builder: (context, state) => const FacturaFormPage()),
+    GoRoute(
+        path: '/inventory',
+        builder: (context, state) => ListadoProductosPage()),
+    GoRoute(path: '/qr', builder: (context, state) => const QRPage()),
+    GoRoute(
+        path: '/reports', builder: (context, state) => const ReporteScreen()),
+  ],
+);
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      title: 'App de Facturación',
+    return MaterialApp.router(
+      title: 'Vendify',
       theme: ThemeData(
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: Colors.deepPurple,
+          primary: Colors.deepPurple,
+          secondary: Colors.deepPurple,
+          background: const Color(0xFFF8F3FF),
+        ),
         useMaterial3: true,
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.lightBlue),
+        scaffoldBackgroundColor: const Color(0xFFF8F3FF),
+        appBarTheme: const AppBarTheme(
+          backgroundColor: Colors.deepPurple,
+          foregroundColor: Colors.white,
+          centerTitle: true,
+          titleTextStyle: TextStyle(
+            fontSize: 22,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
         elevatedButtonTheme: ElevatedButtonThemeData(
           style: ElevatedButton.styleFrom(
-            minimumSize: const Size(double.infinity, 48),
+            foregroundColor: Colors.white,
+            backgroundColor: Colors.deepPurple,
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(16),
             ),
-            textStyle: const TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
+            elevation: 6,
+            padding: const EdgeInsets.symmetric(vertical: 16),
+          ),
+        ),
+        textButtonTheme: TextButtonThemeData(
+          style: TextButton.styleFrom(
+            foregroundColor: Colors.deepPurple,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
             ),
+          ),
+        ),
+        cardTheme: CardTheme(
+          elevation: 4,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
           ),
         ),
         inputDecorationTheme: InputDecorationTheme(
-          border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
           filled: true,
-          fillColor: Colors.grey.shade200,
-          contentPadding: const EdgeInsets.symmetric(
-            horizontal: 16,
-            vertical: 12,
+          fillColor: Colors.white,
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide.none,
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide.none,
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: const BorderSide(color: Colors.deepPurple),
+          ),
+          hintStyle: const TextStyle(
+            color: Colors.grey,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        textTheme: const TextTheme(
+          headlineLarge: TextStyle(
+            fontSize: 36,
+            fontWeight: FontWeight.w900,
+            color: Colors.black,
+          ),
+          headlineMedium: TextStyle(
+            fontSize: 30,
+            fontWeight: FontWeight.w700,
+            color: Colors.black,
+          ),
+          titleLarge: TextStyle(
+            fontSize: 22,
+            fontWeight: FontWeight.bold,
+            color: Colors.black,
+          ),
+          bodyLarge: TextStyle(
+            fontSize: 18,
+            color: Colors.black87,
           ),
         ),
       ),
-      initialRoute: '/',
-      routes: {
-        '/': (context) => const LoginScreen(),
-        '/home': (context) => const HomePage(),
-        '/boletas_facturas': (context) => const BoletasFacturasPage(),
-        '/boleta_form': (context) => const BoletaFormPage(),
-        '/factura_form': (context) => const FacturaFormPage(),
+      routerConfig: _router,
+      builder: (context, child) {
+        return PopScope(
+          canPop:
+              _router.routerDelegate.currentConfiguration.uri.path == '/login',
+          onPopInvoked: (didPop) async {
+            if (!didPop) {
+              context.go('/home');
+            }
+          },
+          child: child!,
+        );
       },
+      localizationsDelegates: const [
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      supportedLocales: const [
+        Locale('es', ''),
+      ],
     );
   }
 }
