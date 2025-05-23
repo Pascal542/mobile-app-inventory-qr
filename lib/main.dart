@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'pages/home_page.dart';
-import 'pages/boletas_facturas_page.dart';
-import 'pages/boleta_form_page.dart';
-import 'pages/factura_form_page.dart';
+import 'features/sales/presentation/pages/home_page.dart';
+import 'features/sales/presentation/pages/boletas_facturas_page.dart';
+import 'features/sales/presentation/pages/boleta_form_page.dart';
+import 'features/sales/presentation/pages/factura_form_page.dart';
 
 void main() {
   SystemChrome.setSystemUIOverlayStyle(
