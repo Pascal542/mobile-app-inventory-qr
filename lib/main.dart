@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'features/auth/presentation/pages/login.dart';
+import 'features/qr/presentation/pages/qr_page.dart';
 
 void main() {
   SystemChrome.setSystemUIOverlayStyle(
@@ -19,17 +19,16 @@ void main() {
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
-  // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'Flutter Demo',
+      title: 'Vendify',
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
+        colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFFD2C789)),
         useMaterial3: true,
       ),
-      home: LoginScreen(),
+      home: const QrPage(),
     );
   }
 }
