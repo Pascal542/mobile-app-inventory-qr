@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'features/qr/presentation/pages/qr_page.dart';
+import 'features/reports/presentation/pages/reports_page.dart';
 
 void main() {
   SystemChrome.setSystemUIOverlayStyle(
@@ -28,7 +28,7 @@ class MyApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFFD2C789)),
         useMaterial3: true,
       ),
-      home: const QrPage(),
+      home: const ReportsPage(),
     );
   }
 }
