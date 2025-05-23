@@ -1,7 +1,18 @@
 import 'package:flutter/material.dart';
-import 'views/pago_view.dart';
+import 'package:flutter/services.dart';
+import 'features/qr/presentation/pages/qr_page.dart';
 
 void main() {
+  SystemChrome.setSystemUIOverlayStyle(
+    const SystemUiOverlayStyle(
+      statusBarColor: Colors.transparent,
+      statusBarBrightness: Brightness.dark,
+      systemNavigationBarColor: Colors.transparent,
+      systemNavigationBarDividerColor: Colors.transparent,
+      systemNavigationBarIconBrightness: Brightness.dark,
+      statusBarIconBrightness: Brightness.dark,
+    ),
+  );
   runApp(const MyApp());
 }
 
@@ -11,11 +22,13 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'App de Inventario',
+      debugShowCheckedModeBanner: false,
+      title: 'Vendify',
       theme: ThemeData(
-        primarySwatch: Colors.deepPurple,
+        colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFFD2C789)),
+        useMaterial3: true,
       ),
-      home: const PagoView(),
+      home: const QrPage(),
     );
   }
 }

@@ -4,21 +4,22 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
-class PagoView extends StatefulWidget {
-  const PagoView({super.key});
+class QrPage extends StatefulWidget {
+  const QrPage({super.key});
 
   @override
-  State<PagoView> createState() => _PagoViewState();
+  State<QrPage> createState() => _QrPageState();
 }
 
-class _PagoViewState extends State<PagoView> {
+class _QrPageState extends State<QrPage> {
   File? _qrImageFile;
   Uint8List? _qrImageWeb;
-
   final ImagePicker _picker = ImagePicker();
 
   Future<void> _pickImage() async {
-    final XFile? pickedFile = await _picker.pickImage(source: ImageSource.gallery);
+    final XFile? pickedFile = await _picker.pickImage(
+      source: ImageSource.gallery,
+    );
     if (pickedFile != null) {
       if (kIsWeb) {
         final bytes = await pickedFile.readAsBytes();
@@ -35,11 +36,20 @@ class _PagoViewState extends State<PagoView> {
 
   Widget _buildImageDisplay() {
     if (kIsWeb && _qrImageWeb != null) {
-      return Image.memory(_qrImageWeb!, height: 200, width: 200, fit: BoxFit.cover);
+      return Image.memory(
+        _qrImageWeb!,
+        height: 200,
+        width: 200,
+        fit: BoxFit.cover,
+      );
     } else if (!kIsWeb && _qrImageFile != null) {
-      return Image.file(_qrImageFile!, height: 200, width: 200, fit: BoxFit.cover);
+      return Image.file(
+        _qrImageFile!,
+        height: 200,
+        width: 200,
+        fit: BoxFit.cover,
+      );
     } else {
-      // Imagen por defecto: ícono de QR
       return Container(
         height: 200,
         width: 200,
@@ -47,7 +57,7 @@ class _PagoViewState extends State<PagoView> {
         child: const Icon(
           Icons.qr_code_2_rounded,
           size: 100,
-          color: Colors.deepPurple,
+          color: Color(0xFFD2C789),
         ),
       );
     }
@@ -56,10 +66,14 @@ class _PagoViewState extends State<PagoView> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: AppBar(
+        title: const Text('QR Scanner'),
+        backgroundColor: const Color(0xFFD2C789),
+      ),
       body: Container(
         decoration: const BoxDecoration(
           gradient: LinearGradient(
-            colors: [Color(0xFFF3E5F5), Color(0xFFE1BEE7)],
+            colors: [Color(0xFFF5F7E6), Color(0xFFE6E9D2)],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
@@ -76,7 +90,7 @@ class _PagoViewState extends State<PagoView> {
                     style: TextStyle(
                       fontSize: 30,
                       fontWeight: FontWeight.w700,
-                      color: Colors.deepPurple,
+                      color: Color(0xFF9E4C57),
                       letterSpacing: 1.2,
                     ),
                   ),
@@ -84,10 +98,7 @@ class _PagoViewState extends State<PagoView> {
                   const Text(
                     'Sube tu código QR para realizar el pago',
                     textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 18,
-                      color: Colors.black87,
-                    ),
+                    style: TextStyle(fontSize: 18, color: Colors.black87),
                   ),
                   const SizedBox(height: 30),
                   AnimatedSwitcher(
@@ -118,12 +129,18 @@ class _PagoViewState extends State<PagoView> {
                     icon: const Icon(Icons.upload_rounded),
                     label: const Text(
                       'Subir QR desde galería',
-                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.deepPurple,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 14),
+                      backgroundColor: const Color(0xFFD2C789),
+                      foregroundColor: const Color(0xFF9E4C57),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 32,
+                        vertical: 14,
+                      ),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
