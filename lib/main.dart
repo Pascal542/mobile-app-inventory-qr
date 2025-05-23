@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'features/reports/presentation/pages/reports_page.dart';
+import 'pages/home_page.dart';
+import 'pages/boletas_facturas_page.dart';
+import 'pages/boleta_form_page.dart';
+import 'pages/factura_form_page.dart';
 
 void main() {
   SystemChrome.setSystemUIOverlayStyle(
@@ -23,12 +26,39 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'Vendify',
+      title: 'App de Facturación',
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFFD2C789)),
         useMaterial3: true,
+        colorScheme: ColorScheme.fromSeed(seedColor: Colors.lightBlue),
+        elevatedButtonTheme: ElevatedButtonThemeData(
+          style: ElevatedButton.styleFrom(
+            minimumSize: const Size(double.infinity, 48),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+            ),
+            textStyle: const TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ),
+        inputDecorationTheme: InputDecorationTheme(
+          border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+          filled: true,
+          fillColor: Colors.grey.shade200,
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: 12,
+          ),
+        ),
       ),
-      home: const ReportsPage(),
+      initialRoute: '/',
+      routes: {
+        '/': (context) => const HomePage(),
+        '/boletas_facturas': (context) => const BoletasFacturasPage(),
+        '/boleta_form': (context) => const BoletaFormPage(),
+        '/factura_form': (context) => const FacturaFormPage(),
+      },
     );
   }
 }
