@@ -4,11 +4,12 @@ import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:firebase_storage/firebase_storage.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'dart:io';
 
 class QRPage extends StatefulWidget {
   const QRPage({super.key});
-
+  
   @override
   State<QRPage> createState() => _QRPageState();
 }
@@ -63,23 +64,36 @@ class _QRPageState extends State<QRPage> {
   Future<void> _uploadToFirebase() async {
     if (_image == null) return;
 
-    final fileName = 'qr_${DateTime.now().millisecondsSinceEpoch}.png';
-    final storageRef = FirebaseStorage.instance.ref().child('qrs/$fileName');
-
     try {
-      final uploadTask = await storageRef.putFile(_image!);
-      final downloadUrl = await uploadTask.ref.getDownloadURL();
+      
+
+      // Crear instancia de FirebaseStorage con tu bucket personalizado
+      final firebaseStorage = FirebaseStorage.instanceFor(
+        bucket: 'gs://vendify-qr', // ✅ Tu bucket personalizado
+      );
+
+      final fileName = 'qr_${DateTime.now().millisecondsSinceEpoch}.png';
+      final storageRef = firebaseStorage.ref().child('qrs/$fileName');
+
+      // Subir imagen
+      final uploadTask = storageRef.putFile(_image!);
+      final snapshot = await uploadTask.whenComplete(() {});
+
+      // Obtener URL descargable
+      final downloadUrl = await snapshot.ref.getDownloadURL();
 
       if (!mounted) return;
+
+      // Mostrar URL en un SnackBar
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('QR subido con éxito:\n$downloadUrl'),
+          content: Text('✅ QR subido con éxito:\n$downloadUrl'),
           duration: const Duration(seconds: 5),
         ),
       );
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error al subir QR: $e')),
+        SnackBar(content: Text('❌ Error al subir QR: $e')),
       );
     }
   }

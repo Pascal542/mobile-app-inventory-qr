@@ -25,6 +25,7 @@ void main() async {
   runApp(const MyApp());
 }
 
+// GoRouter setup
 final _router = GoRouter(
   initialLocation: '/login',
   routes: [
