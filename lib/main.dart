@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 
+// Screens
 import 'package:mobile_app_inventory_qr/features/auth/presentation/pages/login.dart';
 import 'package:mobile_app_inventory_qr/features/auth/presentation/pages/signup.dart';
 import 'package:mobile_app_inventory_qr/features/inventory/presentation/pages/listado_productos_page.dart';
@@ -12,9 +13,10 @@ import 'package:mobile_app_inventory_qr/features/sales/presentation/pages/boleta
 import 'package:mobile_app_inventory_qr/features/sales/presentation/pages/home_page.dart';
 import 'package:mobile_app_inventory_qr/features/sales/presentation/pages/boleta_form_page.dart';
 import 'package:mobile_app_inventory_qr/features/sales/presentation/pages/factura_form_page.dart';
-import 'package:mobile_app_inventory_qr/firebase_options.dart';
 
-Future<void> main() async {
+import 'firebase_options.dart';
+
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
@@ -22,6 +24,7 @@ Future<void> main() async {
   runApp(const MyApp());
 }
 
+// GoRouter setup
 final _router = GoRouter(
   initialLocation: '/login',
   routes: [
@@ -131,10 +134,11 @@ class MyApp extends StatelessWidget {
       ),
       routerConfig: _router,
       builder: (context, child) {
+        final currentPath = _router.routerDelegate.currentConfiguration.uri.path;
         return PopScope(
-          canPop: _router.routerDelegate.currentConfiguration.uri.path == '/login',
+          canPop: currentPath != '/login',
           onPopInvoked: (didPop) async {
-            if (!didPop) {
+            if (!didPop && currentPath != '/home') {
               context.go('/home');
             }
           },
