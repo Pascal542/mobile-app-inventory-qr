@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "774381457370",
+    "project_id": "vendify-qr",
+    "storage_bucket": "vendify-qr.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:774381457370:android:124d4f6dc10d71ee53fae3",
+        "android_client_info": {
+          "package_name": "com.vendify.pushproyecto"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAyHIvodX2R4A438XJ9WV8BtlJgmAOhyL8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
