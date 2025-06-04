@@ -3,6 +3,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'dart:io';
 
 class QRPage extends StatefulWidget {
@@ -59,6 +60,30 @@ class _QRPageState extends State<QRPage> {
     });
   }
 
+  Future<void> _uploadToFirebase() async {
+    if (_image == null) return;
+
+    final fileName = 'qr_${DateTime.now().millisecondsSinceEpoch}.png';
+    final storageRef = FirebaseStorage.instance.ref().child('qrs/$fileName');
+
+    try {
+      final uploadTask = await storageRef.putFile(_image!);
+      final downloadUrl = await uploadTask.ref.getDownloadURL();
+
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('QR subido con éxito:\n$downloadUrl'),
+          duration: const Duration(seconds: 5),
+        ),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error al subir QR: $e')),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -92,7 +117,7 @@ class _QRPageState extends State<QRPage> {
                 color: Colors.grey.shade100,
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
-                  color: Colors.grey.shade400, // Siempre gris suave
+                  color: Colors.grey.shade400,
                   width: 1.5,
                 ),
               ),
@@ -134,6 +159,17 @@ class _QRPageState extends State<QRPage> {
                       style: OutlinedButton.styleFrom(
                         foregroundColor: Colors.redAccent,
                         side: const BorderSide(color: Colors.redAccent),
+                        minimumSize: const Size(double.infinity, 48),
+                      ),
+                    ),
+                  const SizedBox(height: 12),
+                  if (_image != null)
+                    ElevatedButton.icon(
+                      onPressed: _uploadToFirebase,
+                      icon: const Icon(Icons.cloud_upload),
+                      label: const Text('Subir QR a Firebase'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.green,
                         minimumSize: const Size(double.infinity, 48),
                       ),
                     ),

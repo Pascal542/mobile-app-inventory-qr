@@ -1,3 +1,4 @@
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -30,18 +31,10 @@ final _router = GoRouter(
     GoRoute(path: '/login', builder: (context, state) => const LoginScreen()),
     GoRoute(path: '/signup', builder: (context, state) => const SignUp()),
     GoRoute(path: '/home', builder: (context, state) => const HomePage()),
-    GoRoute(
-        path: '/boletas_facturas',
-        builder: (context, state) => const BoletasFacturasPage()),
-    GoRoute(
-        path: '/boleta_form',
-        builder: (context, state) => const BoletaFormPage()),
-    GoRoute(
-        path: '/factura_form',
-        builder: (context, state) => const FacturaFormPage()),
-    GoRoute(
-        path: '/inventory',
-        builder: (context, state) => ListadoProductosPage()),
+    GoRoute(path: '/boletas_facturas', builder: (context, state) => const BoletasFacturasPage()),
+    GoRoute(path: '/boleta_form', builder: (context, state) => const BoletaFormPage()),
+    GoRoute(path: '/factura_form', builder: (context, state) => const FacturaFormPage()),
+    GoRoute(path: '/inventory', builder: (context, state) => ListadoProductosPage()),
     GoRoute(path: '/qr', builder: (context, state) => const QRPage()),
     GoRoute(
         path: '/reports', builder: (context, state) => const ReporteScreen()),

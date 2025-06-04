@@ -7,6 +7,7 @@
   "client": [
     {
       "client_info": {
+<<<<<<< HEAD
         "mobilesdk_app_id": "1:774381457370:android:3fbd2b3340e691c653fae3",
         "android_client_info": {
           "package_name": "com.example.reportes_de_vendify"
@@ -26,6 +27,8 @@
     },
     {
       "client_info": {
+=======
+>>>>>>> 3bf7aa8 (actualizacion de QR)
         "mobilesdk_app_id": "1:774381457370:android:124d4f6dc10d71ee53fae3",
         "android_client_info": {
           "package_name": "com.vendify.pushproyecto"
