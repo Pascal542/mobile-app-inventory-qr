@@ -154,7 +154,7 @@ class _BoletaFormPageState extends State<BoletaFormPage> {
                       ),
                     ),
                   ),
-                ],
+          ],
               ),
               item: Item(
                 description: _descriptionCtrl.text,
@@ -205,85 +205,85 @@ class _BoletaFormPageState extends State<BoletaFormPage> {
         },
         builder: (context, state) {
           return SafeArea(
-            child: SingleChildScrollView(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(16),
+          child: Card(
+            child: Padding(
               padding: const EdgeInsets.all(16),
-              child: Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Form(
-                    key: _formKey,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        Text(
-                          'Detalles de Boleta',
-                          style: Theme.of(context).textTheme.titleLarge,
-                        ),
-                        const SizedBox(height: 16),
-                        TextFormField(
-                          controller: _customerIdCtrl,
-                          decoration: const InputDecoration(
-                            labelText: 'DNI',
-                            prefixIcon: Icon(Icons.person),
-                          ),
-                          validator: (v) =>
-                              v == null || v.isEmpty ? 'Obligatorio' : null,
-                        ),
-                        const SizedBox(height: 16),
-                        TextFormField(
-                          controller: _customerNameCtrl,
-                          decoration: const InputDecoration(
-                            labelText: 'Nombre Cliente',
-                            prefixIcon: Icon(Icons.person_outline),
-                          ),
-                          validator: (v) =>
-                              v == null || v.isEmpty ? 'Obligatorio' : null,
-                        ),
-                        const SizedBox(height: 16),
-                        TextFormField(
-                          controller: _quantityCtrl,
-                          decoration: const InputDecoration(
-                            labelText: 'Cantidad',
-                            prefixIcon: Icon(Icons.confirmation_number),
-                          ),
-                          keyboardType: TextInputType.number,
-                          validator: (v) =>
-                              v == null || v.isEmpty ? 'Obligatorio' : null,
-                        ),
-                        const SizedBox(height: 16),
-                        TextFormField(
-                          controller: _priceCtrl,
-                          decoration: const InputDecoration(
-                            labelText: 'Precio Unitario',
-                            prefixIcon: Icon(Icons.attach_money),
-                          ),
-                          keyboardType: TextInputType.number,
-                          validator: (v) =>
-                              v == null || v.isEmpty ? 'Obligatorio' : null,
-                        ),
-                        const SizedBox(height: 16),
-                        TextFormField(
-                          controller: _descriptionCtrl,
-                          decoration: const InputDecoration(
-                            labelText: 'Producto',
-                            prefixIcon: Icon(Icons.description),
-                          ),
-                          validator: (v) =>
-                              v == null || v.isEmpty ? 'Obligatorio' : null,
-                        ),
-                        const SizedBox(height: 24),
-                        ElevatedButton(
+              child: Form(
+                key: _formKey,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Text(
+                      'Detalles de Boleta',
+                      style: Theme.of(context).textTheme.titleLarge,
+                    ),
+                    const SizedBox(height: 16),
+                    TextFormField(
+                      controller: _customerIdCtrl,
+                      decoration: const InputDecoration(
+                        labelText: 'DNI',
+                        prefixIcon: Icon(Icons.person),
+                      ),
+                      validator: (v) =>
+                          v == null || v.isEmpty ? 'Obligatorio' : null,
+                    ),
+                    const SizedBox(height: 16),
+                    TextFormField(
+                      controller: _customerNameCtrl,
+                      decoration: const InputDecoration(
+                        labelText: 'Nombre Cliente',
+                        prefixIcon: Icon(Icons.person_outline),
+                      ),
+                      validator: (v) =>
+                          v == null || v.isEmpty ? 'Obligatorio' : null,
+                    ),
+                    const SizedBox(height: 16),
+                    TextFormField(
+                      controller: _quantityCtrl,
+                      decoration: const InputDecoration(
+                        labelText: 'Cantidad',
+                        prefixIcon: Icon(Icons.confirmation_number),
+                      ),
+                      keyboardType: TextInputType.number,
+                      validator: (v) =>
+                          v == null || v.isEmpty ? 'Obligatorio' : null,
+                    ),
+                    const SizedBox(height: 16),
+                    TextFormField(
+                      controller: _priceCtrl,
+                      decoration: const InputDecoration(
+                        labelText: 'Precio Unitario',
+                        prefixIcon: Icon(Icons.attach_money),
+                      ),
+                      keyboardType: TextInputType.number,
+                      validator: (v) =>
+                          v == null || v.isEmpty ? 'Obligatorio' : null,
+                    ),
+                    const SizedBox(height: 16),
+                    TextFormField(
+                      controller: _descriptionCtrl,
+                      decoration: const InputDecoration(
+                        labelText: 'Producto',
+                        prefixIcon: Icon(Icons.description),
+                      ),
+                      validator: (v) =>
+                          v == null || v.isEmpty ? 'Obligatorio' : null,
+                    ),
+                    const SizedBox(height: 24),
+                    ElevatedButton(
                           onPressed: state is BoletaLoading ? null : _submit,
                           child: state is BoletaLoading
                               ? const CircularProgressIndicator()
                               : const Text('Enviar Boleta'),
-                        ),
-                      ],
                     ),
-                  ),
+                  ],
                 ),
               ),
             ),
+          ),
+        ),
           );
         },
       ),

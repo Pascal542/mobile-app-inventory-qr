@@ -150,7 +150,8 @@ class BoletaBloc extends Bloc<BoletaEvent, BoletaState> {
     try {
       emit(BoletaLoading());
       final response = await _sendBoletaUseCase(event.request);
-      // Save to Firestore
+
+      // Save sale metadata to Firestore (keep this)
       final fileName = event.request.fileName;
       final docId = fileName.split('-').sublist(2).join('-');
       final data = response.toJson();
@@ -162,16 +163,12 @@ class BoletaBloc extends Bloc<BoletaEvent, BoletaState> {
         'issueTime': DateTime.now().millisecondsSinceEpoch ~/ 1000,
       }, docId);
 
-      // Obtener el PDF y guardar el URL/contenido en Firestore
-      final pdfUrl = await _getBoletaPdfUseCase(
+      // Get the PDF (do not save to Firestore)
+      final pdf = await _getBoletaPdfUseCase(
         response.documentId,
-        'pdf',
+        'A4',
         fileName,
       );
-      await FirebaseFirestore.instance
-          .collection('sales')
-          .doc(docId)
-          .update({'pdfUrl': pdfUrl});
 
       emit(BoletaSent(response));
     } catch (e) {

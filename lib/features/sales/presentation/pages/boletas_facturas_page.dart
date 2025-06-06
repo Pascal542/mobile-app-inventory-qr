@@ -23,22 +23,22 @@ class BoletasFacturasPage extends StatelessWidget {
         child: SingleChildScrollView(
           child: Padding(
             padding: const EdgeInsets.all(24.0),
-            child: Column(
-              children: [
+        child: Column(
+          children: [
                 _actionButton(
                   context,
                   icon: Icons.receipt_long,
                   label: 'Crear Boleta',
                   color: Colors.indigo,
-                  onPressed: () => context.go('/boleta_form'),
-                ),
+              onPressed: () => context.go('/boleta_form'),
+            ),
                 const SizedBox(height: 20),
                 _actionButton(
                   context,
                   icon: Icons.request_quote,
                   label: 'Crear Factura',
                   color: Colors.indigoAccent,
-                  onPressed: () => context.go('/factura_form'),
+              onPressed: () => context.go('/factura_form'),
                 ),
                 const SizedBox(height: 20),
                 _actionButton(
