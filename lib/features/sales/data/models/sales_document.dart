@@ -1,4 +1,5 @@
 class SalesDocument {
+  final String documentId;
   final String fileName;
   final String status;
   final String type;
@@ -10,6 +11,7 @@ class SalesDocument {
   final double? total;
 
   SalesDocument({
+    required this.documentId,
     required this.fileName,
     required this.status,
     required this.type,
@@ -23,6 +25,7 @@ class SalesDocument {
 
   factory SalesDocument.fromJson(Map<String, dynamic> json) {
     return SalesDocument(
+      documentId: json['documentId'] ?? '',
       fileName: json['fileName'] ?? '',
       status: json['status'] ?? '',
       type: json['type'] ?? '',

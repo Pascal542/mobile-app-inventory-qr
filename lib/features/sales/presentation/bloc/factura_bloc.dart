@@ -4,6 +4,7 @@ import '../../domain/usecases/send_factura_usecase.dart';
 import '../../data/models/boleta_request.dart';
 import '../../data/models/boleta_response.dart';
 import '../../domain/usecases/get_last_document_number_usecase.dart';
+import '../../data/datasources/sales_firestore_service.dart';
 
 // Events
 abstract class FacturaEvent extends Equatable {
@@ -82,6 +83,19 @@ class FacturaBloc extends Bloc<FacturaEvent, FacturaState> {
     try {
       emit(FacturaLoading());
       final response = await _sendFacturaUseCase(event.request);
+
+      // Save sale metadata to Firestore (like boleta)
+      final fileName = event.request.fileName;
+      final docId = fileName.split('-').sublist(2).join('-');
+      final data = response.toJson();
+      data.remove('status');
+      await SalesFirestoreService.saveSale({
+        ...data,
+        'fileName': fileName,
+        'type': event.request.documentBody.invoiceTypeCode,
+        'issueTime': DateTime.now().millisecondsSinceEpoch ~/ 1000,
+      }, docId);
+
       emit(FacturaSent(response));
     } catch (e) {
       emit(FacturaError(e.toString()));

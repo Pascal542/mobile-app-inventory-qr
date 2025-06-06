@@ -1,19 +1,28 @@
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../core/constants/sales_api_constants.dart';
 import '../models/sales_document.dart';
 
+// TODO FALTA IMPLEMENTAR QUE HAGA UN GETBYID PARA MANDAR LOS DATOS A FIREBASE
 class SalesApiService {
   static Future<List<SalesDocument>> fetchDocuments() async {
-    final url = Uri.parse(
-      '${ApiConstants.baseUrl}/documents/getAll?personaId=${ApiConstants.personaId}&personaToken=${ApiConstants.personaToken}&order=DESC&limit=50',
-    );
-    final response = await http.get(url);
-    if (response.statusCode == 200) {
-      final List<dynamic> data = jsonDecode(response.body);
-      return data.map((e) => SalesDocument.fromJson(e)).toList();
-    } else {
-      throw Exception('Failed to load sales documents');
+    try {
+      final snapshot = await FirebaseFirestore.instance
+          .collection('sales')
+          .orderBy('issueTime', descending: true)
+          .limit(50)
+          .get();
+
+      return snapshot.docs.map((doc) {
+        final data = doc.data();
+        return SalesDocument.fromJson({
+          ...data,
+          'documentId': data['documentId'] ?? '', // Use the documentId from the data
+        });
+      }).toList();
+    } catch (e) {
+      throw Exception('Failed to load sales documents: $e');
     }
   }
 } 
