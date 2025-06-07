@@ -1,4 +1,6 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart'; 
+import 'package:firebase_core/firebase_core.dart'; // Importa Firebase Core
+import 'firebase_options.dart';  // Importa las configuraciones de Firebase generadas automáticamente
 import 'package:go_router/go_router.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:mobile_app_inventory_qr/features/auth/presentation/pages/login.dart';
@@ -11,8 +13,33 @@ import 'package:mobile_app_inventory_qr/features/sales/presentation/pages/home_p
 import 'package:mobile_app_inventory_qr/features/sales/presentation/pages/boleta_form_page.dart';
 import 'package:mobile_app_inventory_qr/features/sales/presentation/pages/factura_form_page.dart';
 
-void main() {
-  runApp(const MyApp());
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();  // Asegura que las dependencias de Flutter estén inicializadas
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,  // Este archivo contiene la configuración de Firebase
+  );
+  runApp(MyApp());
+}
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'Flutter App',
+      theme: ThemeData(
+        primarySwatch: Colors.blue,
+      ),
+      home: MyHomePage(),
+    );
+  }
+
+class MyHomePage extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: Text('Firebase Initialized')),
+      body: Center(child: Text('Firebase is initialized!')),
+    );
+  }
 }
 
 final _router = GoRouter(
@@ -155,3 +182,4 @@ class MyApp extends StatelessWidget {
     );
   }
 }
+

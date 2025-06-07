@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../data/models/producto.dart';
+import '../../services/firestore_service.dart';  // Importa el servicio de Firestore
 
 class AgregarProductoPage extends StatefulWidget {
   @override
@@ -10,7 +10,11 @@ class _AgregarProductoPageState extends State<AgregarProductoPage> {
   final _formKey = GlobalKey<FormState>();
   String nombre = '';
   int cantidad = 0;
+  String categoria = '';
   double precio = 0.0;
+
+  // Instancia del servicio Firestore
+  final FirestoreService firestoreService = FirestoreService();
 
   @override
   Widget build(BuildContext context) {
@@ -24,20 +28,15 @@ class _AgregarProductoPageState extends State<AgregarProductoPage> {
             children: [
               TextFormField(
                 decoration: InputDecoration(labelText: 'Nombre'),
-                validator:
-                    (value) =>
-                        value == null || value.isEmpty
-                            ? 'Ingrese nombre'
-                            : null,
+                validator: (value) =>
+                    value == null || value.isEmpty ? 'Ingrese nombre' : null,
                 onSaved: (value) => nombre = value!,
               ),
               TextFormField(
                 decoration: InputDecoration(labelText: 'Cantidad'),
                 keyboardType: TextInputType.number,
                 validator: (value) {
-                  if (value == null ||
-                      value.isEmpty ||
-                      int.tryParse(value) == null) {
+                  if (value == null || value.isEmpty || int.tryParse(value) == null) {
                     return 'Ingrese cantidad válida';
                   }
                   return null;
@@ -48,30 +47,31 @@ class _AgregarProductoPageState extends State<AgregarProductoPage> {
                 decoration: InputDecoration(labelText: 'Precio'),
                 keyboardType: TextInputType.numberWithOptions(decimal: true),
                 validator: (value) {
-                  if (value == null ||
-                      value.isEmpty ||
-                      double.tryParse(value) == null) {
+                  if (value == null || value.isEmpty || double.tryParse(value) == null) {
                     return 'Ingrese precio válido';
                   }
                   return null;
                 },
                 onSaved: (value) => precio = double.parse(value!),
               ),
+              TextFormField(
+                decoration: InputDecoration(labelText: 'Categoría'),
+                onSaved: (value) => categoria = value!,
+              ),
               SizedBox(height: 20),
               ElevatedButton(
                 child: Text('Guardar'),
-                onPressed: () {
+                onPressed: () async {
                   if (_formKey.currentState!.validate()) {
                     _formKey.currentState!.save();
-                    final nuevoProducto = Producto(
-                      nombre: nombre,
-                      cantidad: cantidad,
-                      precio: precio,
+                    // Llamar al servicio para agregar el producto a Firestore
+                    await firestoreService.agregarProducto(
+                      nombre, 
+                      cantidad, 
+                      categoria, 
+                      precio,
                     );
-                    Navigator.pop(
-                      context,
-                      nuevoProducto,
-                    ); // Devuelve el producto creado
+                    Navigator.pop(context); // Regresar a la lista de productos
                   }
                 },
               ),

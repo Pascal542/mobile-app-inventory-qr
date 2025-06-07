@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+/*import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../data/models/producto.dart';
 
@@ -69,3 +69,4 @@ class _InventoryPageState extends State<InventoryPage> {
     );
   }
 }
+*/
