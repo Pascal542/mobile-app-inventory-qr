@@ -83,7 +83,7 @@ class _ModificarProductoPageState extends State<ModificarProductoPage> {
                       nombre: nombre,
                       cantidad: cantidad,
                       precio: precio,
-                      id: widget.producto.id,
+                      id: widget.producto.id, categoria: '',
                     );
                     Navigator.pop(
                       context,
