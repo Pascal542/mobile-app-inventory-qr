@@ -1,16 +1,68 @@
-# flutter_application_1
+# Mobile App Inventory QR
 
-A new Flutter project.
+Aplicación móvil para gestión de inventario usando códigos QR, desarrollada con Flutter.
 
-## Getting Started
+## Requisitos
 
-This project is a starting point for a Flutter application.
+- Flutter 3.22.0 o superior
+- Dart 3.4.0 o superior
+- Android Studio / VS Code
+- Git
 
-A few resources to get you started if this is your first Flutter project:
+## Configuración del Entorno
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+1. Instala Flutter siguiendo la [guía oficial](https://flutter.dev/docs/get-started/install)
+2. Verifica la instalación:
+```bash
+flutter doctor
+```
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+## Ejecutar el Proyecto
+
+1. Clona el repositorio:
+```bash
+git clone https://github.com/your-username/mobile-app-inventory-qr.git
+cd mobile-app-inventory-qr
+```
+
+2. Instala las dependencias:
+```bash
+flutter pub get
+```
+
+3. Ejecuta la aplicación:
+```bash
+flutter run
+```
+
+## Estructura del Proyecto
+
+```
+lib/
+  ├── core/           # Funcionalidades core y utilidades
+  ├── features/       # Módulos de la aplicación
+  │   ├── auth/       # Autenticación
+  │   ├── home/       # Página principal
+  │   ├── qr/         # Funcionalidad QR
+  │   ├── reports/    # Reportes
+  │   ├── sales/      # Ventas
+  │   └── payment/    # Pagos
+  ├── l10n/          # Archivos de localización
+  └── main.dart      # Punto de entrada
+```
+
+## Características
+
+- Autenticación de usuarios
+- Escaneo de códigos QR
+- Gestión de inventario
+- Reportes y estadísticas
+- Sistema de pagos
+- Gestión de ventas
+
+## Tecnologías Utilizadas
+
+- Flutter
+- Dart
+- GoRouter para navegación
+- BLoC para gestión de estado
