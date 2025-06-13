@@ -1,72 +1,81 @@
-/*import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
-import '../../data/models/producto.dart';
+import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';  // Importar GoRouter
 
-class InventoryPage extends StatefulWidget {
+class InventoryPage extends StatelessWidget {
   const InventoryPage({super.key});
-
-  @override
-  State<InventoryPage> createState() => _InventoryPageState();
-}
-
-class _InventoryPageState extends State<InventoryPage> {
-  final List<Producto> _productos = [
-    Producto(nombre: 'Producto 1', cantidad: 10, precio: 100),
-    Producto(nombre: 'Producto 2', cantidad: 20, precio: 200),
-    Producto(nombre: 'Producto 3', cantidad: 30, precio: 300),
-  ];
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: const Color(0xFFF8F3FF),
       appBar: AppBar(
-        title: const Text('Inventario'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.add),
-            onPressed: () {
-              // TODO: Implementar navegación a página de agregar producto
-            },
-          ),
-        ],
+        title: const Text('📦 Inventario',
+            style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+        centerTitle: true,
+        backgroundColor: Colors.deepPurple,
+        foregroundColor: Colors.white,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => context.go('/home'),  // Regresar a la página principal
+        ),
       ),
-      body: ListView.builder(
-        padding: const EdgeInsets.all(16),
-        itemCount: _productos.length,
-        itemBuilder: (context, index) {
-          final producto = _productos[index];
-          return Card(
-            child: ListTile(
-              title: Text(
-                producto.nombre,
-                style: Theme.of(context).textTheme.titleMedium,
-              ),
-              subtitle: Text(
-                'Cantidad: ${producto.cantidad} - Precio: \$${producto.precio}',
-                style: Theme.of(context).textTheme.bodyMedium,
-              ),
-              trailing: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  IconButton(
-                    icon: const Icon(Icons.edit),
-                    onPressed: () {
-                      // TODO: Implementar navegación a página de editar producto
-                    },
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.delete),
-                    onPressed: () {
-                      // TODO: Implementar eliminación de producto
-                    },
-                  ),
-                ],
-              ),
+      body: Center(
+        child: SingleChildScrollView(
+          child: Padding(
+            padding: const EdgeInsets.all(24.0),
+            child: Column(
+              children: [
+                // Botón para agregar productos
+                _actionButton(
+                  context,
+                  icon: Icons.add_box,
+                  label: 'Agregar Producto',
+                  color: Colors.indigo,
+                  onPressed: () => context.go('/agregar_producto'),  // Navegar a la página de agregar producto
+                ),
+                const SizedBox(height: 20),
+                
+                // Botón para listar productos
+                _actionButton(
+                  context,
+                  icon: Icons.list_alt,
+                  label: 'Listar Productos',
+                  color: Colors.indigoAccent,
+                  onPressed: () => context.go('/listado_productos'),  // Navegar a la página de listar productos
+                ),
+                const SizedBox(height: 20),
+              ],
             ),
-          );
-        },
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _actionButton(BuildContext context,
+      {required IconData icon,
+      required String label,
+      required Color color,
+      required VoidCallback onPressed}) {
+    return SizedBox(
+      width: double.infinity,
+      child: ElevatedButton.icon(
+        onPressed: onPressed,
+        icon: Icon(icon, size: 30),
+        label: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 16.0),
+          child: Text(
+            label,
+            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          ),
+        ),
+        style: ElevatedButton.styleFrom(
+          foregroundColor: Colors.white,
+          backgroundColor: color,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          elevation: 6,
+        ),
       ),
     );
   }
 }
-*/

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart'; 
 import 'package:firebase_core/firebase_core.dart'; // Importa Firebase Core
+import 'package:mobile_app_inventory_qr/features/inventory/presentation/pages/agregar_producto_page.dart';
+import 'package:mobile_app_inventory_qr/features/inventory/presentation/pages/inventory_page.dart';
 import 'firebase_options.dart';  // Importa las configuraciones de Firebase generadas automáticamente
 import 'package:go_router/go_router.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -40,14 +42,18 @@ final _router = GoRouter(
     GoRoute(
         path: '/factura_form',
         builder: (context, state) => const FacturaFormPage()),
-    GoRoute(
-        path: '/inventory',
-        builder: (context, state) => ListadoProductosPage()),
+
     GoRoute(path: '/qr', builder: (context, state) => const QRPage()),
+    GoRoute(
+      path: '/inventory', builder: (context, state) => const InventoryPage()),
+      GoRoute(
+        path: '/agregar_producto', builder: (context, state) => AgregarProductoPage()),  // Ruta para agregar productos
+      GoRoute(
+        path: '/listado_productos', builder: (context, state) => ListadoProductosPage()),  // Ruta para listar productos
     GoRoute(
         path: '/reports', builder: (context, state) => const ReporteScreen()),
     GoRoute(
-        path: '/sales_list', builder: (context, state) => const SalesListPage()),
+        path: '/sales_list', builder: (context, state) => const SalesListPage()),  
   ],
 );
 
