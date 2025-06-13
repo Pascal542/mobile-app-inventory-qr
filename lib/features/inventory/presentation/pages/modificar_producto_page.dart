@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../data/models/producto.dart';
+import '../../services/firestore_service.dart'; // Asegúrate de que el servicio Firestore esté importado
 
 class ModificarProductoPage extends StatefulWidget {
   final Producto producto;
@@ -16,6 +17,9 @@ class _ModificarProductoPageState extends State<ModificarProductoPage> {
   late String nombre;
   late int cantidad;
   late double precio;
+
+  // Instancia del servicio Firestore
+  final FirestoreService firestoreService = FirestoreService();
 
   @override
   void initState() {
@@ -38,11 +42,8 @@ class _ModificarProductoPageState extends State<ModificarProductoPage> {
               TextFormField(
                 initialValue: nombre,
                 decoration: InputDecoration(labelText: 'Nombre'),
-                validator:
-                    (value) =>
-                        value == null || value.isEmpty
-                            ? 'Ingrese nombre'
-                            : null,
+                validator: (value) =>
+                    value == null || value.isEmpty ? 'Ingrese nombre' : null,
                 onSaved: (value) => nombre = value!,
               ),
               TextFormField(
@@ -50,10 +51,13 @@ class _ModificarProductoPageState extends State<ModificarProductoPage> {
                 decoration: InputDecoration(labelText: 'Cantidad'),
                 keyboardType: TextInputType.number,
                 validator: (value) {
-                  if (value == null ||
-                      value.isEmpty ||
-                      int.tryParse(value) == null) {
+                  if (value == null || value.isEmpty || int.tryParse(value) == null) {
                     return 'Ingrese cantidad válida';
+                  }
+                  int cantidadValue = int.parse(value);
+                  // Validación para que la cantidad no sea menor a 0
+                  if (cantidadValue < 0) {
+                    return 'La cantidad no puede ser menor a 0';
                   }
                   return null;
                 },
@@ -64,10 +68,13 @@ class _ModificarProductoPageState extends State<ModificarProductoPage> {
                 decoration: InputDecoration(labelText: 'Precio'),
                 keyboardType: TextInputType.numberWithOptions(decimal: true),
                 validator: (value) {
-                  if (value == null ||
-                      value.isEmpty ||
-                      double.tryParse(value) == null) {
+                  if (value == null || value.isEmpty || double.tryParse(value) == null) {
                     return 'Ingrese precio válido';
+                  }
+                  double precioValue = double.parse(value);
+                  // Validación para que el precio sea mayor a 0
+                  if (precioValue <= 0) {
+                    return 'El precio debe ser mayor a 0';
                   }
                   return null;
                 },
@@ -76,22 +83,24 @@ class _ModificarProductoPageState extends State<ModificarProductoPage> {
               SizedBox(height: 20),
               ElevatedButton(
                 child: Text('Guardar cambios'),
-                onPressed: () {
+                onPressed: () async {
                   if (_formKey.currentState!.validate()) {
                     _formKey.currentState!.save();
-                    final productoModificado = Producto(
-                      nombre: nombre,
-                      cantidad: cantidad,
-                      precio: precio,
-                      id: widget.producto.id, categoria: '',
+
+                    // Llamar al servicio de Firestore para actualizar el producto por su nombre
+                    await firestoreService.actualizarProductoPorNombre(
+                      widget.producto.nombre, // El nombre original del producto
+                      nombre,  // El nuevo nombre
+                      cantidad,  // La nueva cantidad
+                      precio,  // El nuevo precio
+                      widget.producto.categoria,  // La nueva categoría
                     );
-                    Navigator.pop(
-                      context,
-                      productoModificado,
-                    ); // Devuelve producto modificado
+
+                    // Regresar a la página anterior
+                    Navigator.pop(context);
                   }
                 },
-              ),
+              )
             ],
           ),
         ),

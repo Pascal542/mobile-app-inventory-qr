@@ -63,20 +63,26 @@ class _ListadoProductosPageState extends State<ListadoProductosPage> {
               return ListTile(
                 title: Text(producto.nombre),
                 subtitle: Text('Cantidad: ${producto.cantidad}'),
-                trailing: IconButton(
-                  icon: Icon(Icons.edit),
-                  onPressed: () async {
-                    // Navegar a modificar producto y esperar el producto modificado
-                    final productoModificado = await Navigator.push<Producto>(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => ModificarProductoPage(producto: producto),
-                      ),
-                    );
-                    if (productoModificado != null) {
-                      // Aquí puedes actualizar el producto en Firebase si lo has modificado
-                    }
-                  },
+                trailing: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text('Costo unitario: \S/${producto.precio.toStringAsFixed(2)}'),
+                    IconButton(
+                      icon: Icon(Icons.edit),
+                      onPressed: () async {
+                        // Navegar a modificar producto y esperar el producto modificado
+                        final productoModificado = await Navigator.push<Producto>(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => ModificarProductoPage(producto: producto),
+                          ),
+                        );
+                        if (productoModificado != null) {
+                          // Aquí puedes actualizar el producto en Firebase si lo has modificado
+                        }
+                      },
+                    ),
+                  ],
                 ),
               );
             },
