@@ -1,1 +1,2 @@
-{"flutter":{"platforms":{"android":{"default":{"projectId":"vendify-qr","appId":"1:774381457370:android:3fbd2b3340e691c653fae3","fileOutput":"android/app/google-services.json"}},"dart":{"lib/firebase_options.dart":{"projectId":"vendify-qr","configurations":{"android":"1:774381457370:android:3fbd2b3340e691c653fae3","ios":"1:774381457370:ios:a22a4323a2e7152553fae3"}}}}}}
+{"flutter":{"platforms":{"android":{"default":{"projectId":"vendify-qr","appId":"1:774381457370:android:3fbd2b3340e691c653fae3","fileOutput":"android/app/google-services.json"}},"dart":{"lib/firebase_options.dart":{"projectId":"vendify-qr","configurations":{"android":"1:774381457370:android:3fbd2b3340e691c653fae3"}}}}}}
+

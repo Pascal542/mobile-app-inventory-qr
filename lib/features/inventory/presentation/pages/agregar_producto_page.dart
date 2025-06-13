@@ -39,6 +39,10 @@ class _AgregarProductoPageState extends State<AgregarProductoPage> {
                   if (value == null || value.isEmpty || int.tryParse(value) == null) {
                     return 'Ingrese cantidad válida';
                   }
+                  int cantidadValue = int.parse(value);
+                  if (cantidadValue < 0) {
+                    return 'La cantidad no puede ser negativa';
+                  }
                   return null;
                 },
                 onSaved: (value) => cantidad = int.parse(value!),
@@ -49,6 +53,10 @@ class _AgregarProductoPageState extends State<AgregarProductoPage> {
                 validator: (value) {
                   if (value == null || value.isEmpty || double.tryParse(value) == null) {
                     return 'Ingrese precio válido';
+                  }
+                  double precioValue = double.parse(value);
+                  if (precioValue < 0) {
+                    return 'El precio no puede ser negativo';
                   }
                   return null;
                 },
