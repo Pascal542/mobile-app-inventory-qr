@@ -67,6 +67,7 @@ dependencies:
 
 dev_dependencies:
   change_app_package_name: ^1.1.20
+  change_app_package_name: ^1.1.20
   flutter_test:
     sdk: flutter
   mockito: ^5.4.4

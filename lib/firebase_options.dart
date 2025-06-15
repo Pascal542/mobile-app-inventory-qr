@@ -55,10 +55,14 @@ class DefaultFirebaseOptions {
   static const FirebaseOptions android = FirebaseOptions(
     apiKey: 'AIzaSyAyHIvodX2R4A438XJ9WV8BtlJgmAOhyL8',
 <<<<<<< HEAD
+<<<<<<< HEAD
     appId: '1:774381457370:android:3fbd2b3340e691c653fae3',
 =======
     appId: '1:774381457370:android:124d4f6dc10d71ee53fae3',
 >>>>>>> 3bf7aa8 (actualizacion de QR)
+=======
+    appId: '1:774381457370:android:124d4f6dc10d71ee53fae3',
+>>>>>>> 4f84740f03c71dba7c3a05df1af7ab6a1073de7a
     messagingSenderId: '774381457370',
     projectId: 'vendify-qr',
     storageBucket: 'vendify-qr.firebasestorage.app',

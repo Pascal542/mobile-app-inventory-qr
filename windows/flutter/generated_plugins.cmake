@@ -8,9 +8,13 @@ list(APPEND FLUTTER_PLUGIN_LIST
   firebase_auth
   firebase_core
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
   firebase_storage
 >>>>>>> 3bf7aa8 (actualizacion de QR)
+=======
+  firebase_storage
+>>>>>>> 4f84740f03c71dba7c3a05df1af7ab6a1073de7a
   flutter_secure_storage_windows
   printing
   url_launcher_windows

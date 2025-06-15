@@ -10,9 +10,13 @@ import file_selector_macos
 import firebase_auth
 import firebase_core
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
 import firebase_storage
 >>>>>>> 3bf7aa8 (actualizacion de QR)
+=======
+import firebase_storage
+>>>>>>> 4f84740f03c71dba7c3a05df1af7ab6a1073de7a
 import flutter_secure_storage_macos
 import mobile_scanner
 import open_file_mac
@@ -28,9 +32,13 @@ func RegisterGeneratedPlugins(registry: FlutterPluginRegistry) {
   FLTFirebaseAuthPlugin.register(with: registry.registrar(forPlugin: "FLTFirebaseAuthPlugin"))
   FLTFirebaseCorePlugin.register(with: registry.registrar(forPlugin: "FLTFirebaseCorePlugin"))
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
   FLTFirebaseStoragePlugin.register(with: registry.registrar(forPlugin: "FLTFirebaseStoragePlugin"))
 >>>>>>> 3bf7aa8 (actualizacion de QR)
+=======
+  FLTFirebaseStoragePlugin.register(with: registry.registrar(forPlugin: "FLTFirebaseStoragePlugin"))
+>>>>>>> 4f84740f03c71dba7c3a05df1af7ab6a1073de7a
   FlutterSecureStoragePlugin.register(with: registry.registrar(forPlugin: "FlutterSecureStoragePlugin"))
   MobileScannerPlugin.register(with: registry.registrar(forPlugin: "MobileScannerPlugin"))
   OpenFilePlugin.register(with: registry.registrar(forPlugin: "OpenFilePlugin"))
