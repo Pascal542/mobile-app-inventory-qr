@@ -1,0 +1,30 @@
+{
+  "project_info": {
+    "project_number": "1085196068700",
+    "firebase_url": "https://vendify-reportes-default-rtdb.firebaseio.com",
+    "project_id": "vendify-reportes",
+    "storage_bucket": "vendify-reportes.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1085196068700:android:d2c9110f589393d8bbc399",
+        "android_client_info": {
+          "package_name": "com.example.reportes_de_vendify"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDwy8EPiMVyvjmSHUPsgnLsqX4Af7w0KRw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

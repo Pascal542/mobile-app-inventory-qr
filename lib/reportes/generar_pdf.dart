@@ -3,135 +3,124 @@ import 'package:flutter/material.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
-class GenerarPDF extends StatelessWidget {
-  const GenerarPDF({super.key});
+class GenerarPdfPage extends StatelessWidget {
+  const GenerarPdfPage({Key? key}) : super(key: key);
 
   Future<Uint8List> _generarPdf() async {
     final pdf = pw.Document();
 
-    // Datos de ejemplo
-    final ingresosMensuales = {
-      'Ene': 1200.0,
-      'Feb': 1500.0,
-      'Mar': 1800.0,
-      'Abr': 1000.0,
-      'May': 1300.0,
-    };
+    final firestore = FirebaseFirestore.instance;
 
-    final topProductos = [
-      {'nombre': 'Camisa Polo', 'usos': 120},
-      {'nombre': 'Jean Slim Fit', 'usos': 95},
-      {'nombre': 'Zapatillas Urbanas', 'usos': 85},
-    ];
+    // 🔹 Obtener inventario
+    final inventarioSnapshot = await firestore.collection('inventario').get();
+    final productos = inventarioSnapshot.docs.map((doc) {
+      final data = doc.data();
+      return {
+        'nombre': data['producto'],
+        'stock': data['stockActual'],
+        'precio': data['precio'],
+        'categoria': data['categoria'],
+        'movimientos': 0, // Puedes actualizar si implementas historial
+      };
+    }).toList();
 
-    final movimientos = [
-      {'tipo': 'Entrada', 'producto': 'Camisa Polo', 'cantidad': 10, 'fecha': '20/05'},
-      {'tipo': 'Salida', 'producto': 'Jean Slim Fit', 'cantidad': 2, 'fecha': '19/05'},
-      {'tipo': 'Entrada', 'producto': 'Zapatillas Urbanas', 'cantidad': 5, 'fecha': '18/05'},
-    ];
+    // 🔹 Obtener ventas
+    final ventasSnapshot = await firestore.collection('ventas').get();
+    final ventas = ventasSnapshot.docs.map((doc) {
+      final data = doc.data();
+      return {
+        'producto': data['producto'],
+        'cantidad': data['cantidad'],
+        'fecha': (data['fecha'] as Timestamp).toDate(),
+        'total': data['total'],
+      };
+    }).toList();
 
-    final totalIngresos = ingresosMensuales.values.reduce((a, b) => a + b);
-    final totalStock = 25 + 8 + 4 + 3 + 30;
-    final productosAgotados = 2;
+    // 🔹 Obtener pagos
+    final pagosSnapshot = await firestore.collection('pagos').get();
+    final pagos = pagosSnapshot.docs.map((doc) {
+      final data = doc.data();
+      return {
+        'estado': data['estado'],
+        'monto': data['monto'],
+        'fecha': (data['fecha'] as Timestamp).toDate(),
+      };
+    }).toList();
 
-    final ingresosPorPeriodo = [
-      {'periodo': '01-15 Ene', 'ingreso': 1500},
-      {'periodo': '16-31 Ene', 'ingreso': 1200},
-      {'periodo': '01-15 Feb', 'ingreso': 2000},
-      {'periodo': '16-28 Feb', 'ingreso': 1600},
-      {'periodo': '01-15 Mar', 'ingreso': 1200},
-      {'periodo': '16-31 Mar', 'ingreso': 1000},
-    ];
+    // 🔢 Cálculos
+    final totalIngresos = ventas.fold<double>(
+      0.0,
+          (sum, v) => sum + double.tryParse(v['total'].toString())!,
+    );
 
-    final pagosHistorial = [
-      {'fecha': '2025-01-15', 'monto': 25, 'estado': 'Completado'},
-      {'fecha': '2025-02-10', 'monto': 50, 'estado': 'Pendiente'},
-      {'fecha': '2025-03-05', 'monto': 70, 'estado': 'Completado'},
-    ];
+    final totalStock = productos.fold<int>(
+      0,
+          (sum, p) => sum + int.tryParse(p['stock'].toString())!,
+    );
 
-    final productos = [
-      {'nombre': 'Camisa Polo', 'stock': 25, 'precio': 59.90, 'categoria': 'Ropa', 'movimientos': 120},
-      {'nombre': 'Jean Slim Fit', 'stock': 8, 'precio': 99.90, 'categoria': 'Ropa', 'movimientos': 200},
-      {'nombre': 'Zapatillas Urbanas', 'stock': 4, 'precio': 149.90, 'categoria': 'Calzado', 'movimientos': 170},
-      {'nombre': 'Casaca de Cuero', 'stock': 3, 'precio': 199.90, 'categoria': 'Ropa', 'movimientos': 90},
-      {'nombre': 'Gorra Snapback', 'stock': 30, 'precio': 39.90, 'categoria': 'Accesorios', 'movimientos': 60},
-    ];
+    final productosAgotados = productos.where((p) => int.tryParse(p['stock'].toString()) == 0).length;
+    final stockBajo = productos.where((p) => int.tryParse(p['stock'].toString())! < 10).toList();
 
-    final stockBajo = productos.where((p) => (p['stock'] as int) < 10).toList();
-    final masMovidos = [...productos]..sort((a, b) => (b['movimientos'] as int).compareTo(a['movimientos'] as int));
-    final topMovidos = masMovidos.take(3).toList();
+    final pagosCompletados = pagos.where((p) => p['estado'] == 'completado').length;
+    final pagosPendientes = pagos.length - pagosCompletados;
+    final completadosPct = pagos.isEmpty ? 0 : (pagosCompletados / pagos.length * 100).round();
+    final pendientesPct = 100 - completadosPct;
 
     final Map<String, int> categoriaMap = {};
     for (var p in productos) {
-      final categoria = p['categoria'] as String;
-      final stock = p['stock'] as int;
+      final categoria = p['categoria'].toString();
+      final stock = int.tryParse(p['stock'].toString()) ?? 0;
       categoriaMap[categoria] = (categoriaMap[categoria] ?? 0) + stock;
     }
 
-    // Construcción del PDF
+    // 📄 Construcción del PDF
     pdf.addPage(
       pw.MultiPage(
         build: (context) => [
 
-          // 📊 Reporte General
           pw.Text('📊 Reporte General', style: pw.TextStyle(fontSize: 22, fontWeight: pw.FontWeight.bold)),
           pw.SizedBox(height: 12),
 
-          pw.Text('📈 Ingresos Mensuales', style: pw.TextStyle(fontSize: 16, fontWeight: pw.FontWeight.bold)),
-          pw.SizedBox(height: 6),
-          pw.Column(children: ingresosMensuales.entries.map((e) => pw.Text('${e.key}: S/ ${e.value.toStringAsFixed(2)}')).toList()),
+          pw.Text('📦 Inventario Total', style: pw.TextStyle(fontSize: 16, fontWeight: pw.FontWeight.bold)),
+          pw.Column(children: productos.map((p) =>
+              pw.Bullet(text: '${p['nombre']} - Stock: ${p['stock']} - S/ ${(p['precio'] as num).toStringAsFixed(2)}')
+          ).toList()),
           pw.SizedBox(height: 12),
 
-          pw.Text('🏆 Top Productos Vendidos', style: pw.TextStyle(fontSize: 16, fontWeight: pw.FontWeight.bold)),
-          pw.SizedBox(height: 6),
-          pw.Column(children: topProductos.map((p) => pw.Bullet(text: '${p['nombre']} - ${p['usos']} vendidos')).toList()),
+          pw.Text('📈 Ventas Registradas', style: pw.TextStyle(fontSize: 16, fontWeight: pw.FontWeight.bold)),
+          ventas.isEmpty
+              ? pw.Text('No hay ventas registradas.')
+              : pw.Column(children: ventas.map((v) =>
+              pw.Bullet(text: '${v['producto']} - Cantidad: ${v['cantidad']} - Total: S/ ${v['total']} - Fecha: ${v['fecha'].toString().substring(0, 10)}')
+          ).toList()),
           pw.SizedBox(height: 12),
 
-          pw.Text('📦 Últimos Movimientos', style: pw.TextStyle(fontSize: 16, fontWeight: pw.FontWeight.bold)),
-          pw.SizedBox(height: 6),
-          pw.Column(children: movimientos.map((m) => pw.Bullet(text: '${m['tipo']}: ${m['producto']} - Cant: ${m['cantidad']} - Fecha: ${m['fecha']}')).toList()),
+          pw.Text('💰 Pagos Registrados', style: pw.TextStyle(fontSize: 16, fontWeight: pw.FontWeight.bold)),
+          pagos.isEmpty
+              ? pw.Text('No hay pagos registrados.')
+              : pw.Column(children: pagos.map((p) =>
+              pw.Bullet(text: 'S/ ${p['monto']} - ${p['estado']} - Fecha: ${p['fecha'].toString().substring(0, 10)}')
+          ).toList()),
           pw.SizedBox(height: 12),
 
-          pw.Text('📋 Resumen', style: pw.TextStyle(fontSize: 16, fontWeight: pw.FontWeight.bold)),
+          pw.Text('📋 Resumen General'),
           pw.Text('Total Ingresos: S/ ${totalIngresos.toStringAsFixed(2)}'),
           pw.Text('Total Productos en Stock: $totalStock unidades'),
           pw.Text('Productos Agotados: $productosAgotados'),
+          pw.Text('Pagos Completados: $completadosPct%'),
+          pw.Text('Pagos Pendientes: $pendientesPct%'),
 
-          // 📦 Reporte de Inventario
           pw.SizedBox(height: 24),
-          pw.Text('📦 Reporte de Inventario', style: pw.TextStyle(fontSize: 22, fontWeight: pw.FontWeight.bold)),
-          pw.SizedBox(height: 12),
-
           pw.Text('⚠️ Productos con Stock Bajo', style: pw.TextStyle(fontSize: 16, fontWeight: pw.FontWeight.bold)),
           stockBajo.isEmpty
               ? pw.Text('Todos los productos tienen suficiente stock.')
-              : pw.Column(children: stockBajo.map((p) => pw.Bullet(text: '${p['nombre']} - Stock: ${p['stock']} - S/ ${(p['precio'] as double).toStringAsFixed(2)}')).toList()),
-          pw.SizedBox(height: 12),
+              : pw.Column(children: stockBajo.map((p) => pw.Bullet(text: '${p['nombre']} - Stock: ${p['stock']}')).toList()),
 
-          pw.Text('🔥 Productos Más Movidos', style: pw.TextStyle(fontSize: 16, fontWeight: pw.FontWeight.bold)),
-          pw.Column(children: topMovidos.map((p) => pw.Bullet(text: '${p['nombre']} - ${p['movimientos']} movimientos - Stock: ${p['stock']}')).toList()),
           pw.SizedBox(height: 12),
-
           pw.Text('🧮 Distribución de Stock por Categoría', style: pw.TextStyle(fontSize: 16, fontWeight: pw.FontWeight.bold)),
           pw.Column(children: categoriaMap.entries.map((e) => pw.Text('${e.key}: ${e.value} unidades')).toList()),
-
-          // 💰 Reporte de Pagos
-          pw.SizedBox(height: 24),
-          pw.Text('💰 Reporte de Pagos', style: pw.TextStyle(fontSize: 22, fontWeight: pw.FontWeight.bold)),
-          pw.SizedBox(height: 12),
-
-          pw.Text('📅 Gráfico de Ingresos por Periodo', style: pw.TextStyle(fontSize: 16, fontWeight: pw.FontWeight.bold)),
-          pw.Column(children: ingresosPorPeriodo.map((p) => pw.Text('${p['periodo']}: S/ ${p['ingreso']}')).toList()),
-          pw.SizedBox(height: 12),
-
-          pw.Text('📊 Reporte de Pagos (Completados vs Pendientes)', style: pw.TextStyle(fontSize: 16, fontWeight: pw.FontWeight.bold)),
-          pw.Text('Completados: 75%'),
-          pw.Text('Pendientes: 25%'),
-          pw.SizedBox(height: 12),
-
-          pw.Text('📋 Historial de Pagos Simulados', style: pw.TextStyle(fontSize: 16, fontWeight: pw.FontWeight.bold)),
-          pw.Column(children: pagosHistorial.map((p) => pw.Text('Fecha: ${p['fecha']} - S/ ${p['monto']} - ${p['estado']}')).toList()),
         ],
       ),
     );
@@ -139,7 +128,7 @@ class GenerarPDF extends StatelessWidget {
     return pdf.save();
   }
 
-  @override
+    @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
