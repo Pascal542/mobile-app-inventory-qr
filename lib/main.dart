@@ -1,10 +1,9 @@
-import 'package:firebase_core/firebase_core.dart';
-import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:go_router/go_router.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:firebase_core/firebase_core.dart';
+
 import 'firebase_options.dart';
 import 'package:mobile_app_inventory_qr/features/auth/presentation/pages/login.dart';
 import 'package:mobile_app_inventory_qr/features/auth/presentation/pages/signup.dart';
@@ -26,8 +25,6 @@ void main() async {
   runApp(const MyApp());
 }
 
-// GoRouter setup
-// GoRouter setup
 final _router = GoRouter(
   initialLocation: '/login',
   routes: [
@@ -38,15 +35,9 @@ final _router = GoRouter(
     GoRoute(path: '/boleta_form', builder: (context, state) => const BoletaFormPage()),
     GoRoute(path: '/factura_form', builder: (context, state) => const FacturaFormPage()),
     GoRoute(path: '/inventory', builder: (context, state) => ListadoProductosPage()),
-    GoRoute(path: '/boletas_facturas', builder: (context, state) => const BoletasFacturasPage()),
-    GoRoute(path: '/boleta_form', builder: (context, state) => const BoletaFormPage()),
-    GoRoute(path: '/factura_form', builder: (context, state) => const FacturaFormPage()),
-    GoRoute(path: '/inventory', builder: (context, state) => ListadoProductosPage()),
     GoRoute(path: '/qr', builder: (context, state) => const QRPage()),
-    GoRoute(
-        path: '/reports', builder: (context, state) => const ReporteScreen()),
-    GoRoute(
-        path: '/sales_list', builder: (context, state) => const SalesListPage()),
+    GoRoute(path: '/reports', builder: (context, state) => const ReporteScreen()),
+    GoRoute(path: '/sales_list', builder: (context, state) => const SalesListPage()),
   ],
 );
 

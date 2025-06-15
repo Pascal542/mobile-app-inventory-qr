@@ -32,6 +32,7 @@ class _FacturaFormPageState extends State<FacturaFormPage> {
     if (!validPrefixes.any((prefix) => value.startsWith(prefix))) {
       return 'El RUC debe empezar con 10, 15, 16, 17 o 20';
     }
+    return null;
   }
 
   @override
