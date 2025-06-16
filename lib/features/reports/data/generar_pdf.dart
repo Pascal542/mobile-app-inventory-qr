@@ -1,6 +1,5 @@
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
-import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 
@@ -32,8 +31,8 @@ class GenerarPDF extends StatelessWidget {
     ];
 
     final totalIngresos = ingresosMensuales.values.reduce((a, b) => a + b);
-    final totalStock = 25 + 8 + 4 + 3 + 30;
-    final productosAgotados = 2;
+    const totalStock = 25 + 8 + 4 + 3 + 30;
+    const productosAgotados = 2;
 
     final ingresosPorPeriodo = [
       {'periodo': '01-15 Ene', 'ingreso': 1500},

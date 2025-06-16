@@ -183,8 +183,9 @@ class _BoletaFormPageState extends State<BoletaFormPage> {
   String? _validateQuantity(String? value) {
     if (value == null || value.isEmpty) return 'Obligatorio';
     final quantity = int.tryParse(value);
-    if (quantity == null || quantity <= 0)
+    if (quantity == null || quantity <= 0) {
       return 'La cantidad debe ser mayor a 0';
+    }
     return null;
   }
 

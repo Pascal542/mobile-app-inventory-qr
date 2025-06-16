@@ -5,6 +5,8 @@ import 'modificar_producto_page.dart';
 import 'package:go_router/go_router.dart';
 
 class ListadoProductosPage extends StatefulWidget {
+  const ListadoProductosPage({super.key});
+
   @override
   _ListadoProductosPageState createState() => _ListadoProductosPageState();
 }
@@ -23,12 +25,12 @@ class _ListadoProductosPageState extends State<ListadoProductosPage> {
         ),
         actions: [
           IconButton(
-            icon: Icon(Icons.add),
+            icon: const Icon(Icons.add),
             onPressed: () async {
               // Navegar a agregar producto y esperar el nuevo producto
               final nuevoProducto = await Navigator.push<Producto>(
                 context,
-                MaterialPageRoute(builder: (context) => AgregarProductoPage()),
+                MaterialPageRoute(builder: (context) => const AgregarProductoPage()),
               );
               if (nuevoProducto != null) {
                 setState(() {
@@ -40,7 +42,7 @@ class _ListadoProductosPageState extends State<ListadoProductosPage> {
         ],
       ),
       body: productos.isEmpty
-          ? Center(child: Text('No hay productos aún'))
+          ? const Center(child: Text('No hay productos aún'))
           : ListView.builder(
               itemCount: productos.length,
               itemBuilder: (context, index) {
@@ -49,7 +51,7 @@ class _ListadoProductosPageState extends State<ListadoProductosPage> {
                   title: Text(producto.nombre),
                   subtitle: Text('Cantidad: ${producto.cantidad}'),
                   trailing: IconButton(
-                    icon: Icon(Icons.edit),
+                    icon: const Icon(Icons.edit),
                     onPressed: () async {
                       // Navegar a modificar producto y esperar el producto modificado
                       final productoModificado = await Navigator.push<Producto>(

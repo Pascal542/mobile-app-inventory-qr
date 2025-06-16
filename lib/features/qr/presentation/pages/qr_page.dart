@@ -4,7 +4,6 @@ import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:firebase_storage/firebase_storage.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'dart:io';
 
 class QRPage extends StatefulWidget {
@@ -144,8 +143,8 @@ class _QRPageState extends State<QRPage> {
                           width: 250,
                           fit: BoxFit.cover,
                         )
-                      : Column(
-                          children: const [
+                      : const Column(
+                          children: [
                             Icon(Icons.qr_code_2, size: 100, color: Colors.grey),
                             SizedBox(height: 12),
                             Text(
