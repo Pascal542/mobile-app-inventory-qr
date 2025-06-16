@@ -1,7 +1,4 @@
-import 'package:http/http.dart' as http;
-import 'dart:convert';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import '../../core/constants/sales_api_constants.dart';
 import '../models/sales_document.dart';
 
 // TODO FALTA IMPLEMENTAR QUE HAGA UN GETBYID PARA MANDAR LOS DATOS A FIREBASE

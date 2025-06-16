@@ -7,7 +7,6 @@ import '../../domain/usecases/get_boleta_pdf_usecase.dart';
 import '../../data/models/boleta_request.dart';
 import '../../data/models/boleta_response.dart';
 import '../../data/datasources/sales_firestore_service.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 
 // Events
 abstract class BoletaEvent extends Equatable {

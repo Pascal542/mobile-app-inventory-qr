@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import '../../data/models/producto.dart';
 
 class AgregarProductoPage extends StatefulWidget {
+  const AgregarProductoPage({super.key});
+
   @override
   _AgregarProductoPageState createState() => _AgregarProductoPageState();
 }
@@ -15,15 +17,15 @@ class _AgregarProductoPageState extends State<AgregarProductoPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('Agregar Producto')),
+      appBar: AppBar(title: const Text('Agregar Producto')),
       body: Padding(
-        padding: EdgeInsets.all(16),
+        padding: const EdgeInsets.all(16),
         child: Form(
           key: _formKey,
           child: Column(
             children: [
               TextFormField(
-                decoration: InputDecoration(labelText: 'Nombre'),
+                decoration: const InputDecoration(labelText: 'Nombre'),
                 validator:
                     (value) =>
                         value == null || value.isEmpty
@@ -32,7 +34,7 @@ class _AgregarProductoPageState extends State<AgregarProductoPage> {
                 onSaved: (value) => nombre = value!,
               ),
               TextFormField(
-                decoration: InputDecoration(labelText: 'Cantidad'),
+                decoration: const InputDecoration(labelText: 'Cantidad'),
                 keyboardType: TextInputType.number,
                 validator: (value) {
                   if (value == null ||
@@ -45,8 +47,8 @@ class _AgregarProductoPageState extends State<AgregarProductoPage> {
                 onSaved: (value) => cantidad = int.parse(value!),
               ),
               TextFormField(
-                decoration: InputDecoration(labelText: 'Precio'),
-                keyboardType: TextInputType.numberWithOptions(decimal: true),
+                decoration: const InputDecoration(labelText: 'Precio'),
+                keyboardType: const TextInputType.numberWithOptions(decimal: true),
                 validator: (value) {
                   if (value == null ||
                       value.isEmpty ||
@@ -57,9 +59,9 @@ class _AgregarProductoPageState extends State<AgregarProductoPage> {
                 },
                 onSaved: (value) => precio = double.parse(value!),
               ),
-              SizedBox(height: 20),
+              const SizedBox(height: 20),
               ElevatedButton(
-                child: Text('Guardar'),
+                child: const Text('Guardar'),
                 onPressed: () {
                   if (_formKey.currentState!.validate()) {
                     _formKey.currentState!.save();
