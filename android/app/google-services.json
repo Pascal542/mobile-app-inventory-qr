@@ -1,21 +1,38 @@
 {
   "project_info": {
+<<<<<<< HEAD
     "project_number": "774381457370",
     "project_id": "vendify-qr",
     "storage_bucket": "vendify-qr.firebasestorage.app"
+=======
+    "project_number": "1085196068700",
+    "firebase_url": "https://vendify-reportes-default-rtdb.firebaseio.com",
+    "project_id": "vendify-reportes",
+    "storage_bucket": "vendify-reportes.firebasestorage.app"
+>>>>>>> f084ef998e4084b27316a359a953092a6212c3fc
   },
   "client": [
     {
       "client_info": {
+<<<<<<< HEAD
         "mobilesdk_app_id": "1:774381457370:android:124d4f6dc10d71ee53fae3",
         "android_client_info": {
           "package_name": "com.vendify.pushproyecto"
+=======
+        "mobilesdk_app_id": "1:1085196068700:android:d2c9110f589393d8bbc399",
+        "android_client_info": {
+          "package_name": "com.example.reportes_de_vendify"
+>>>>>>> f084ef998e4084b27316a359a953092a6212c3fc
         }
       },
       "oauth_client": [],
       "api_key": [
         {
+<<<<<<< HEAD
           "current_key": "AIzaSyAyHIvodX2R4A438XJ9WV8BtlJgmAOhyL8"
+=======
+          "current_key": "AIzaSyDwy8EPiMVyvjmSHUPsgnLsqX4Af7w0KRw"
+>>>>>>> f084ef998e4084b27316a359a953092a6212c3fc
         }
       ],
       "services": {

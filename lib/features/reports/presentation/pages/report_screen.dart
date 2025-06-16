@@ -65,8 +65,12 @@ class ReporteScreen extends StatelessWidget {
                   icon: Icons.picture_as_pdf,
                   label: 'Reporte en PDF',
                   color: Colors.blueAccent,
+<<<<<<< HEAD:lib/features/reports/presentation/pages/report_screen.dart
                   onPressed: () => Navigator.push(context,
                       MaterialPageRoute(builder: (_) => const GenerarPDF())),
+=======
+                  onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const GenerarPdfPage())),
+>>>>>>> f084ef998e4084b27316a359a953092a6212c3fc:lib/reportes/report_screen.dart
                 ),
               ],
             ),

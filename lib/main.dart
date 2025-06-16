@@ -1,4 +1,6 @@
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
+<<<<<<< HEAD
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -24,6 +26,24 @@ void main() async {
   );
   runApp(const MyApp());
 }
+=======
+import 'firebase_options.dart';
+import 'reportes/report_screen.dart';
+
+  Future<void> main() async {
+    WidgetsFlutterBinding.ensureInitialized();
+
+    try {
+      await Firebase.initializeApp(
+        options: DefaultFirebaseOptions.currentPlatform,
+      );
+    } catch (e) {
+      print("⚠️ Firebase ya estaba inicializado: $e");
+    }
+
+    runApp(const MyApp());
+  }
+>>>>>>> f084ef998e4084b27316a359a953092a6212c3fc
 
 final _router = GoRouter(
   initialLocation: '/login',
@@ -157,6 +177,10 @@ class MyApp extends StatelessWidget {
           Locale('es', ''),
         ],
       ),
+<<<<<<< HEAD
+=======
+      home: const ReporteScreen(),
+>>>>>>> f084ef998e4084b27316a359a953092a6212c3fc
     );
   }
 }

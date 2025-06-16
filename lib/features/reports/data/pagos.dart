@@ -1,6 +1,45 @@
 import 'package:flutter/material.dart';
-import 'package:fl_chart/fl_chart.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
+import 'package:fl_chart/fl_chart.dart';
+import 'dart:collection';
+
+class Pago {
+  final String? ventaId;
+  final double monto;
+  final Timestamp? fecha;
+  final String estado;
+  final String tipo;
+
+  Pago({
+    this.ventaId,
+    required this.monto,
+    this.fecha,
+    required this.estado,
+    required this.tipo,
+  });
+
+  factory Pago.fromFirestore(DocumentSnapshot doc) {
+    final data = doc.data() as Map<String, dynamic>;
+    return Pago(
+      ventaId: data['ventaId'] ?? '',
+      monto: (data['monto'] as num).toDouble(),
+      fecha: data['fecha'],
+      estado: data['estado'] ?? 'sin estado',
+      tipo: data['tipo'] ?? 'sin tipo',
+    );
+  }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'ventaId': ventaId,
+      'monto': monto,
+      'fecha': fecha ?? Timestamp.now(),
+      'estado': estado,
+      'tipo': tipo,
+    };
+  }
+}
 
 class Pago {
   final String cliente;
@@ -50,235 +89,240 @@ class ReportePagos extends StatefulWidget {
 }
 
 class _ReportePagosState extends State<ReportePagos> {
-  DateTimeRange? rangoFechasSeleccionado;
+  DateTimeRange? rangoSeleccionado;
 
-  final List<Map<String, dynamic>> ingresos = [
-    {
-      'inicio': DateTime(2025, 1, 1),
-      'fin': DateTime(2025, 1, 15),
-      'periodo': '01-15 Ene',
-      'ingreso': 1500,
-    },
-    {
-      'inicio': DateTime(2025, 1, 16),
-      'fin': DateTime(2025, 1, 31),
-      'periodo': '16-31 Ene',
-      'ingreso': 1200,
-    },
-    {
-      'inicio': DateTime(2025, 2, 1),
-      'fin': DateTime(2025, 2, 15),
-      'periodo': '01-15 Feb',
-      'ingreso': 2000,
-    },
-    {
-      'inicio': DateTime(2025, 2, 16),
-      'fin': DateTime(2025, 2, 28),
-      'periodo': '16-28 Feb',
-      'ingreso': 1600,
-    },
-    {
-      'inicio': DateTime(2025, 3, 1),
-      'fin': DateTime(2025, 3, 15),
-      'periodo': '01-15 Mar',
-      'ingreso': 1200,
-    },
-    {
-      'inicio': DateTime(2025, 3, 16),
-      'fin': DateTime(2025, 3, 31),
-      'periodo': '16-31 Mar',
-      'ingreso': 1000,
-    },
-  ];
-
-  List<Map<String, dynamic>> get ingresosFiltrados {
-    if (rangoFechasSeleccionado == null) {
-      return ingresos;
-    } else {
-      return ingresos.where((item) {
-        final inicio = item['inicio'] as DateTime;
-        final fin = item['fin'] as DateTime;
-        final rangoInicio = rangoFechasSeleccionado!.start;
-        final rangoFin = rangoFechasSeleccionado!.end;
-
-        return fin.isAfter(rangoInicio.subtract(const Duration(days: 1))) &&
-            inicio.isBefore(rangoFin.add(const Duration(days: 1)));
-      }).toList();
-    }
+  Stream<List<Pago>> getPagosStream() {
+    return FirebaseFirestore.instance
+        .collection('pagos')
+        .orderBy('fecha')
+        .snapshots()
+        .map((snapshot) => snapshot.docs.map((doc) => Pago.fromFirestore(doc)).toList());
   }
 
-  Future<void> seleccionarRangoFechas() async {
-    final picked = await showDateRangePicker(
+  void seleccionarRangoFechas(BuildContext context) async {
+    final DateTime now = DateTime.now();
+    final DateTimeRange? rango = await showDateRangePicker(
       context: context,
-      firstDate: DateTime(2024),
-      lastDate: DateTime(2026),
-      initialDateRange: rangoFechasSeleccionado ??
-          DateTimeRange(
-            start: DateTime(2025, 1, 1),
-            end: DateTime(2025, 3, 31),
-          ),
+      firstDate: DateTime(now.year - 5),
+      lastDate: DateTime(now.year + 5),
+      initialDateRange: rangoSeleccionado ??
+          DateTimeRange(start: now.subtract(const Duration(days: 30)), end: now),
     );
-    if (picked != null) {
+
+    if (rango != null) {
       setState(() {
-        rangoFechasSeleccionado = picked;
+        rangoSeleccionado = rango;
       });
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final formatoFecha = DateFormat('dd MMM yyyy');
-
     return Scaffold(
-      appBar: AppBar(title: const Text('💰 Reporte de Pagos')),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: ListView(
-          children: [
-            const Text(
-              'Gráfico de ingresos por período',
-              style: TextStyle(fontWeight: FontWeight.bold),
+      appBar: AppBar(
+        title: const Text('💰 Reporte de Pagos'),
+        backgroundColor: Colors.green,
+        centerTitle: true,
+      ),
+      body: StreamBuilder<List<Pago>>(
+        stream: getPagosStream(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          if (snapshot.hasError) {
+            return Center(child: Text('Error: ${snapshot.error}'));
+          }
+
+          List<Pago> pagos = snapshot.data ?? [];
+
+          // Filtrar por rango de fechas
+          if (rangoSeleccionado != null) {
+            pagos = pagos.where((p) {
+              if (p.fecha == null) return false;
+              final fecha = p.fecha!.toDate();
+              return fecha.isAfter(rangoSeleccionado!.start.subtract(const Duration(days: 1))) &&
+                  fecha.isBefore(rangoSeleccionado!.end.add(const Duration(days: 1)));
+            }).toList();
+          }
+
+          if (pagos.isEmpty) {
+            return const Center(child: Text('No hay pagos registrados.'));
+          }
+
+          final completados = pagos.where((p) => p.estado.toLowerCase() == 'completado').length;
+          final pendientes = pagos.where((p) => p.estado.toLowerCase() == 'pendiente').length;
+          final porPeriodo = _agruparPorPeriodo(pagos);
+
+          return SingleChildScrollView(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text('📊 Gráfico de ingresos por período', style: TextStyle(fontWeight: FontWeight.bold)),
+                SizedBox(height: 250, child: _buildBarChart(porPeriodo)),
+
+                const SizedBox(height: 10),
+                Center(
+                  child: ElevatedButton.icon(
+                    onPressed: () => seleccionarRangoFechas(context),
+                    icon: const Icon(Icons.date_range),
+                    label: const Text('Seleccionar rango de fechas'),
+                    style: ElevatedButton.styleFrom(backgroundColor: Colors.white70),
+                  ),
+                ),
+
+                const SizedBox(height: 20),
+                const Text('🥧 Estado de pagos (completados vs. pendientes)', style: TextStyle(fontWeight: FontWeight.bold)),
+                SizedBox(height: 250, child: _buildPieChart(completados, pendientes)),
+
+                const SizedBox(height: 20),
+                const Text('📋 Historial de pagos', style: TextStyle(fontWeight: FontWeight.bold)),
+                const SizedBox(height: 10),
+                ...pagos.map((p) => Card(
+                  elevation: 3,
+                  margin: const EdgeInsets.symmetric(vertical: 6),
+                  child: ListTile(
+                    leading: Icon(Icons.payments_outlined,
+                        color: p.estado.toLowerCase() == 'completado' ? Colors.green : Colors.red),
+                    title: Text('S/ ${p.monto.toStringAsFixed(2)}'),
+                    subtitle: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('Estado: ${p.estado}'),
+                        Text('Tipo: ${p.tipo}'),
+                        if (p.fecha != null)
+                          Text('Fecha: ${DateFormat('dd/MM/yyyy').format(p.fecha!.toDate())}'),
+                      ],
+                    ),
+                  ),
+                )),
+              ],
             ),
-            const SizedBox(height: 16),
-            SizedBox(
-              height: 240,
-              child: IngresosGrafico(
-                datos: ingresosFiltrados,
-              ),
-            ),
-            const SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: seleccionarRangoFechas,
-              child: Text(rangoFechasSeleccionado == null
-                  ? 'Seleccionar rango de fechas'
-                  : 'Rango: ${formatoFecha.format(rangoFechasSeleccionado!.start)} - ${formatoFecha.format(rangoFechasSeleccionado!.end)}'),
-            ),
-            const SizedBox(height: 24),
-            const Text(
-              'Estado de pagos (completados vs. pendientes)',
-              style: TextStyle(fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 12),
-            const SizedBox(height: 200, child: PagosEstadoGrafico()),
-            const SizedBox(height: 24),
-            const Text(
-              'Historial de pagos simulados',
-              style: TextStyle(fontWeight: FontWeight.bold),
-            ),
-            const PagosHistorial(),
-          ],
-        ),
+          );
+        },
       ),
     );
   }
-}
 
-class IngresosGrafico extends StatelessWidget {
-  final List<Map<String, dynamic>> datos;
+  Map<String, double> _agruparPorPeriodo(List<Pago> pagos) {
+    final Map<String, double> agrupado = {};
+    for (var p in pagos) {
+      if (p.fecha == null) continue;
+      DateTime fecha = p.fecha!.toDate();
+      String periodo = (fecha.day <= 15)
+          ? '01-15 ${_mes(fecha.month)}'
+          : '16-${_ultimoDiaDelMes(fecha)} ${_mes(fecha.month)}';
+      agrupado[periodo] = (agrupado[periodo] ?? 0) + p.monto;
+    }
+    final sorted = SplayTreeMap<String, double>.from(agrupado);
+    return sorted;
+  }
 
-  const IngresosGrafico({super.key, required this.datos});
+  Widget _buildBarChart(Map<String, double> data) {
+    final List<BarChartGroupData> barGroups = [];
+    int index = 0;
 
-  @override
-  Widget build(BuildContext context) {
+    data.forEach((key, value) {
+      barGroups.add(BarChartGroupData(
+        x: index++,
+        barRods: [
+          BarChartRodData(toY: value, color: Colors.green, width: 16),
+        ],
+      ));
+    });
+
     return BarChart(
       BarChartData(
         alignment: BarChartAlignment.spaceAround,
+<<<<<<< HEAD:lib/features/reports/data/pagos.dart
         maxY: datos
                 .map((e) => e['ingreso'] as num)
                 .reduce((a, b) => a > b ? a : b)
                 .toDouble() +
             500,
+=======
+        barGroups: barGroups,
+>>>>>>> f084ef998e4084b27316a359a953092a6212c3fc:lib/reportes/pagos.dart
         titlesData: FlTitlesData(
-          leftTitles: AxisTitles(
-            sideTitles: SideTitles(
-              showTitles: true,
-              reservedSize: 50,
-              getTitlesWidget: (value, _) {
-                if (value == 0) {
-                  return const Text('S/0');
-                } else {
-                  return Text('S/${(value / 1000).toStringAsFixed(1)}K');
-                }
-              },
-            ),
-          ),
-          rightTitles: AxisTitles(
-            sideTitles: SideTitles(showTitles: false),
-          ),
-          topTitles: AxisTitles(
-            sideTitles: SideTitles(showTitles: false),
-          ),
           bottomTitles: AxisTitles(
             sideTitles: SideTitles(
               showTitles: true,
               getTitlesWidget: (value, _) {
                 final index = value.toInt();
-                if (index >= 0 && index < datos.length) {
-                  return Text(
-                    datos[index]['periodo'],
-                    style: const TextStyle(fontSize: 10),
-                  );
-                }
-                return const Text('');
+                if (index >= data.length) return const SizedBox.shrink();
+                return Padding(
+                  padding: const EdgeInsets.only(top: 8.0),
+                  child: Text(data.keys.elementAt(index), style: const TextStyle(fontSize: 10)),
+                );
               },
+              reservedSize: 42,
+            ),
+          ),
+          leftTitles: AxisTitles(
+            sideTitles: SideTitles(
+              showTitles: true,
+              interval: 500,
+              getTitlesWidget: (value, _) => Text('S/${value.toInt()}'),
+              reservedSize: 40,
             ),
           ),
         ),
-        barTouchData: BarTouchData(enabled: false),
+        gridData: FlGridData(show: true),
         borderData: FlBorderData(show: false),
-        barGroups: datos.asMap().entries.map((entry) {
-          final i = entry.key;
-          final item = entry.value;
-          return BarChartGroupData(
-            x: i,
-            barRods: [
-              BarChartRodData(
-                toY: (item['ingreso'] as num).toDouble(),
-                color: Colors.green,
-                width: 16,
-                borderRadius: BorderRadius.circular(4),
-              ),
-            ],
-          );
-        }).toList(),
       ),
     );
   }
-}
 
-class PagosEstadoGrafico extends StatelessWidget {
-  const PagosEstadoGrafico({super.key});
+  Widget _buildPieChart(int completado, int pendiente) {
+    final total = completado + pendiente;
+    if (total == 0) {
+      return const Center(child: Text('No hay datos para mostrar.'));
+    }
 
-  @override
-  Widget build(BuildContext context) {
+    final List<PieChartSectionData> sections = [];
+
+    if (completado > 0) {
+      sections.add(
+        PieChartSectionData(
+          color: Colors.blue,
+          value: completado.toDouble(),
+          title: '${(completado / total * 100).round()}%\nCompletado',
+          radius: 80,
+          titleStyle: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12),
+          titlePositionPercentageOffset: 0.55,
+        ),
+      );
+    }
+
+    if (pendiente > 0) {
+      sections.add(
+        PieChartSectionData(
+          color: Colors.red,
+          value: pendiente.toDouble(),
+          title: '${(pendiente / total * 100).round()}%\nPendiente',
+          radius: 80,
+          titleStyle: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12),
+          titlePositionPercentageOffset: 0.55,
+        ),
+      );
+    }
+
     return PieChart(
       PieChartData(
-        sections: [
-          PieChartSectionData(
-            value: 75,
-            color: Colors.blue,
-            title: 'Completados\n75%',
-            radius: 60,
-            titleStyle: const TextStyle(color: Colors.white, fontSize: 14),
-          ),
-          PieChartSectionData(
-            value: 25,
-            color: Colors.red,
-            title: 'Pendientes\n25%',
-            radius: 60,
-            titleStyle: const TextStyle(color: Colors.white, fontSize: 14),
-          ),
-        ],
-        sectionsSpace: 2,
-        centerSpaceRadius: 30,
+        sections: sections,
+        sectionsSpace: 4,
+        centerSpaceRadius: 40,
       ),
     );
   }
-}
 
-class PagosHistorial extends StatelessWidget {
-  const PagosHistorial({super.key});
+  String _mes(int mes) {
+    const meses = ['', 'Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+    return meses[mes];
+  }
 
+<<<<<<< HEAD:lib/features/reports/data/pagos.dart
   @override
   Widget build(BuildContext context) {
     final pagos = [
@@ -298,5 +342,11 @@ class PagosHistorial extends StatelessWidget {
           )
           .toList(),
     );
+=======
+  int _ultimoDiaDelMes(DateTime fecha) {
+    return DateTime(fecha.year, fecha.month + 1, 0).day;
+>>>>>>> f084ef998e4084b27316a359a953092a6212c3fc:lib/reportes/pagos.dart
   }
 }
+
+

@@ -53,10 +53,18 @@ class DefaultFirebaseOptions {
   }
 
   static const FirebaseOptions android = FirebaseOptions(
+<<<<<<< HEAD
     apiKey: 'AIzaSyAyHIvodX2R4A438XJ9WV8BtlJgmAOhyL8',
     appId: '1:774381457370:android:124d4f6dc10d71ee53fae3',
     messagingSenderId: '774381457370',
     projectId: 'vendify-qr',
     storageBucket: 'vendify-qr.firebasestorage.app',
+=======
+    apiKey: 'AIzaSyBPbqlq_jEmGkgTeGc-l4Zmgx44NkQotDA',
+    appId: '1:210765087566:android:a3249d2a3039a808ef941f',
+    messagingSenderId: '210765087566',
+    projectId: 'reportes-8e924',
+    storageBucket: 'reportes-8e924.firebasestorage.app',
+>>>>>>> f084ef998e4084b27316a359a953092a6212c3fc
   );
 }

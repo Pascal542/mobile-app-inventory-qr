@@ -1,5 +1,9 @@
 <<<<<<< HEAD
+<<<<<<< HEAD
 {"flutter":{"platforms":{"android":{"default":{"projectId":"vendify-qr","appId":"1:774381457370:android:3fbd2b3340e691c653fae3","fileOutput":"android/app/google-services.json"}},"dart":{"lib/firebase_options.dart":{"projectId":"vendify-qr","configurations":{"android":"1:774381457370:android:3fbd2b3340e691c653fae3"}}}}}}
 =======
 {"flutter":{"platforms":{"android":{"default":{"projectId":"vendify-qr","appId":"1:774381457370:android:124d4f6dc10d71ee53fae3","fileOutput":"android/app/google-services.json"}},"dart":{"lib/firebase_options.dart":{"projectId":"vendify-qr","configurations":{"android":"1:774381457370:android:124d4f6dc10d71ee53fae3"}}}}}}
 >>>>>>> 3bf7aa8 (actualizacion de QR)
+=======
+{"flutter":{"platforms":{"android":{"default":{"projectId":"reportes-8e924","appId":"1:210765087566:android:a3249d2a3039a808ef941f","fileOutput":"android/app/google-services.json"}},"dart":{"lib/firebase_options.dart":{"projectId":"reportes-8e924","configurations":{"android":"1:210765087566:android:a3249d2a3039a808ef941f"}}}}}}
+>>>>>>> f084ef998e4084b27316a359a953092a6212c3fc
