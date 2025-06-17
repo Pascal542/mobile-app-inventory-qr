@@ -3,6 +3,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:mobile_app_inventory_qr/features/auth/presentation/pages/users_dataform.dart';
 
 import 'firebase_options.dart';
 import 'package:mobile_app_inventory_qr/features/auth/presentation/pages/login.dart';
@@ -34,10 +35,14 @@ final _router = GoRouter(
     GoRoute(path: '/boletas_facturas', builder: (context, state) => const BoletasFacturasPage()),
     GoRoute(path: '/boleta_form', builder: (context, state) => const BoletaFormPage()),
     GoRoute(path: '/factura_form', builder: (context, state) => const FacturaFormPage()),
-    GoRoute(path: '/inventory', builder: (context, state) => ListadoProductosPage()),
+    GoRoute(path: '/inventory', builder: (context, state) => const ListadoProductosPage()),
     GoRoute(path: '/qr', builder: (context, state) => const QRPage()),
     GoRoute(path: '/reports', builder: (context, state) => const ReporteScreen()),
     GoRoute(path: '/sales_list', builder: (context, state) => const SalesListPage()),
+    GoRoute(
+      path: '/business-details',
+      builder: (context, state) => const UserDetailsForm(),
+    ),
   ],
 );
 

@@ -1,7 +1,7 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'signup.dart';
-import '../../data/models/users.dart';
+import 'package:mobile_app_inventory_qr/core/data/auth_service.dart';
 import '../../../../core/data/sql.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -27,20 +27,45 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   void _login() async {
-    if (_formKey.currentState!.validate()) {
-      var response = await db.login(
-        Users(usrName: _emailCtrl.text, usrPassword: _passwordCtrl.text),
+  if (_formKey.currentState!.validate()) {
+    try {
+      await authService.value.signIn(
+        email: _emailCtrl.text.trim(),
+        password: _passwordCtrl.text.trim(),
       );
-      if (response == true) {
-        if (!mounted) return;
-        context.go('/home');
-      } else {
+      if (!mounted) return;
+      context.go('/home');
+    } on FirebaseAuthException catch (e) {
+      String errorMessage;
+      switch (e.code) {
+        case 'user-not-found':
+          errorMessage = 'Usuario no registrado.';
+          break;
+        case 'wrong-password':
+          errorMessage = 'Contraseña incorrecta.';
+          break;
+        case 'invalid-email':
+          errorMessage = 'Correo inválido.';
+          break;
+        default:
+          errorMessage = 'Error: ${e.message}';
+      }
+
+      if (mounted) {
         setState(() {
           isLoginTrue = true;
         });
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(errorMessage),
+            backgroundColor: Colors.red,
+          ),
+        );
       }
     }
   }
+}
 
   void _navigateToHome() {
     context.go('/home');

@@ -38,7 +38,7 @@ dependencies:
   firebase_core: ^2.32.0
   cloud_firestore: ^4.17.5
   firebase_storage: ^11.5.3
-  firebase_auth: ^4.17.4
+  firebase_auth: ^4.16.0
 
   # Abrir archivos con open_file
   open_file: ^3.3.2
@@ -63,3 +63,4 @@ platforms:
   macos:
     plugin:
       implements: none
+

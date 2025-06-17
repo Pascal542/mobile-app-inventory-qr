@@ -4,7 +4,7 @@ import '../../data/models/producto.dart';
 class ModificarProductoPage extends StatefulWidget {
   final Producto producto;
 
-  ModificarProductoPage({required this.producto});
+  const ModificarProductoPage({super.key, required this.producto});
 
   @override
   _ModificarProductoPageState createState() => _ModificarProductoPageState();
@@ -28,16 +28,16 @@ class _ModificarProductoPageState extends State<ModificarProductoPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('Modificar Producto')),
+      appBar: AppBar(title: const Text('Modificar Producto')),
       body: Padding(
-        padding: EdgeInsets.all(16),
+        padding: const EdgeInsets.all(16),
         child: Form(
           key: _formKey,
           child: Column(
             children: [
               TextFormField(
                 initialValue: nombre,
-                decoration: InputDecoration(labelText: 'Nombre'),
+                decoration: const InputDecoration(labelText: 'Nombre'),
                 validator:
                     (value) =>
                         value == null || value.isEmpty
@@ -47,7 +47,7 @@ class _ModificarProductoPageState extends State<ModificarProductoPage> {
               ),
               TextFormField(
                 initialValue: cantidad.toString(),
-                decoration: InputDecoration(labelText: 'Cantidad'),
+                decoration: const InputDecoration(labelText: 'Cantidad'),
                 keyboardType: TextInputType.number,
                 validator: (value) {
                   if (value == null ||
@@ -61,8 +61,8 @@ class _ModificarProductoPageState extends State<ModificarProductoPage> {
               ),
               TextFormField(
                 initialValue: precio.toString(),
-                decoration: InputDecoration(labelText: 'Precio'),
-                keyboardType: TextInputType.numberWithOptions(decimal: true),
+                decoration: const InputDecoration(labelText: 'Precio'),
+                keyboardType: const TextInputType.numberWithOptions(decimal: true),
                 validator: (value) {
                   if (value == null ||
                       value.isEmpty ||
@@ -73,9 +73,9 @@ class _ModificarProductoPageState extends State<ModificarProductoPage> {
                 },
                 onSaved: (value) => precio = double.parse(value!),
               ),
-              SizedBox(height: 20),
+              const SizedBox(height: 20),
               ElevatedButton(
-                child: Text('Guardar cambios'),
+                child: const Text('Guardar cambios'),
                 onPressed: () {
                   if (_formKey.currentState!.validate()) {
                     _formKey.currentState!.save();

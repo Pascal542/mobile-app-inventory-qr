@@ -1,6 +1,8 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import '../../data/models/users.dart';
+import 'package:mobile_app_inventory_qr/core/data/auth_service.dart';
 import '../../../../core/data/sql.dart';
 
 class SignUp extends StatefulWidget {
@@ -26,33 +28,64 @@ class _SignUpState extends State<SignUp> {
   }
 
   void _signup() async {
-    if (_formKey.currentState!.validate()) {
-      if (_passwordCtrl.text == _confirmPasswordCtrl.text) {
-        var response = await db.signup(
-          Users(usrName: _emailCtrl.text, usrPassword: _passwordCtrl.text),
+  if (_formKey.currentState!.validate()) {
+    if (_passwordCtrl.text == _confirmPasswordCtrl.text) {
+      try {
+        await authService.value.createAccount(
+          email: _emailCtrl.text.trim(),
+          password: _passwordCtrl.text.trim(),
         );
-        if (response == true) {
-          if (!mounted) return;
-          context.go('/login');
-        } else {
-          if (!mounted) return;
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Error al registrar usuario'),
-              backgroundColor: Colors.red,
-            ),
-          );
+                // 🔽 Obtener el UID y subirlo a Firestore
+        final uid = FirebaseAuth.instance.currentUser?.uid;
+        if (uid != null) await uploadUserDb(uid);
+        
+        if (!mounted) return;
+        context.go('/login'); // o redirige a '/home' directamente si ya está logueado
+      } on FirebaseAuthException catch (e) {
+        String errorMessage;
+        switch (e.code) {
+          case 'email-already-in-use':
+            errorMessage = 'El correo ya está en uso.';
+            break;
+          case 'invalid-email':
+            errorMessage = 'Correo no válido.';
+            break;
+          case 'weak-password':
+            errorMessage = 'La contraseña es muy débil.';
+            break;
+          default:
+            errorMessage = 'Error: ${e.message}';
         }
-      } else {
+
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Las contraseñas no coinciden'),
+          SnackBar(
+            content: Text(errorMessage),
             backgroundColor: Colors.red,
           ),
         );
       }
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Las contraseñas no coinciden'),
+          backgroundColor: Colors.red,
+        ),
+      );
     }
   }
+}
+
+Future<void> uploadUserDb(String uid) async {
+  try {
+    await FirebaseFirestore.instance.collection("users").doc(uid).set({
+      "uid": uid,
+      "name": _emailCtrl.text.trim(),
+    });
+    print("Usuario registrado en Firestore con UID: $uid");
+  } catch (e) {
+    print("Error al registrar el usuario en Firestore: $e");
+  }
+}
 
   @override
   Widget build(BuildContext context) {

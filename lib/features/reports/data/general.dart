@@ -27,8 +27,8 @@ class ReporteGeneral extends StatelessWidget {
     ];
 
     final totalIngresos = ingresosMensuales.values.reduce((a, b) => a + b);
-    final totalStock = 25 + 8 + 4 + 3 + 30;
-    final productosAgotados = 2;
+    const totalStock = 25 + 8 + 4 + 3 + 30;
+    const productosAgotados = 2;
 
     return Scaffold(
       appBar: AppBar(title: const Text('📊 Reporte General')),
@@ -86,8 +86,8 @@ class ReporteGeneral extends StatelessWidget {
                         },
                       ),
                     ),
-                    rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                    topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                    rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                    topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
                   ),
                   borderData: FlBorderData(show: false),
                 ),
@@ -131,21 +131,21 @@ class ReporteGeneral extends StatelessWidget {
                 trailing: Text('S/ ${totalIngresos.toStringAsFixed(2)}'),
               ),
             ),
-            Card(
+            const Card(
               elevation: 3,
-              margin: const EdgeInsets.symmetric(vertical: 8),
+              margin: EdgeInsets.symmetric(vertical: 8),
               child: ListTile(
-                leading: const Icon(Icons.inventory, color: Colors.blue),
-                title: const Text('Total Productos en Stock'),
+                leading: Icon(Icons.inventory, color: Colors.blue),
+                title: Text('Total Productos en Stock'),
                 trailing: Text('$totalStock unidades'),
               ),
             ),
-            Card(
+            const Card(
               elevation: 3,
-              margin: const EdgeInsets.symmetric(vertical: 8),
+              margin: EdgeInsets.symmetric(vertical: 8),
               child: ListTile(
-                leading: const Icon(Icons.warning, color: Colors.red),
-                title: const Text('Productos Agotados'),
+                leading: Icon(Icons.warning, color: Colors.red),
+                title: Text('Productos Agotados'),
                 trailing: Text('$productosAgotados'),
               ),
             ),

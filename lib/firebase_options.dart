@@ -59,4 +59,5 @@ class DefaultFirebaseOptions {
     projectId: 'vendify-qr',
     storageBucket: 'vendify-qr.firebasestorage.app',
   );
+
 }
