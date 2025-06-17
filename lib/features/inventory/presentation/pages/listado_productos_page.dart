@@ -6,6 +6,8 @@ import '../../services/firestore_service.dart';
 import '../../data/models/producto.dart';
 
 class ListadoProductosPage extends StatefulWidget {
+  const ListadoProductosPage({super.key});
+
   @override
   _ListadoProductosPageState createState() => _ListadoProductosPageState();
 }
@@ -24,12 +26,12 @@ class _ListadoProductosPageState extends State<ListadoProductosPage> {
         ),
         actions: [
           IconButton(
-            icon: Icon(Icons.add),
+            icon: const Icon(Icons.add),
             onPressed: () async {
               // Navegar a agregar producto y esperar el nuevo producto
               final nuevoProducto = await Navigator.push<Producto>(
                 context,
-                MaterialPageRoute(builder: (context) => AgregarProductoPage()),
+                MaterialPageRoute(builder: (context) => const AgregarProductoPage()),
               );
               if (nuevoProducto != null) {
                 // Aquí, podrías agregar el nuevo producto directamente a Firestore.

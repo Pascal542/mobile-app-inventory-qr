@@ -13,6 +13,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:mobile_app_inventory_qr/features/auth/presentation/pages/users_dataform.dart';
 
 import 'firebase_options.dart';
 import 'package:mobile_app_inventory_qr/features/auth/presentation/pages/login.dart';

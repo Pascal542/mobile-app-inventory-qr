@@ -14,8 +14,8 @@ class MenuScreen extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Encabezado
-              Row(
-                children: const [
+              const Row(
+                children: [
                   Text(
                     'Menú',
                     style: TextStyle(

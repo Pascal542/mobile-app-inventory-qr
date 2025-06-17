@@ -1,12 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:url_launcher/url_launcher.dart';
-import 'package:url_launcher/url_launcher_string.dart';
 import 'package:open_file/open_file.dart';
 import '../../data/models/sales_document.dart';
 import '../../data/datasources/sales_api_service.dart';
 import '../../data/datasources/sales_api_client.dart';
-import '../../core/constants/sales_api_constants.dart';
 import 'package:path_provider/path_provider.dart';
 import 'dart:io';
 

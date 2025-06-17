@@ -126,9 +126,9 @@ void main() {
     });
 
     testWidgets('TC-07: Verificar mensaje de error', (WidgetTester tester) async {
-      when(mockBoletaBloc.state).thenReturn(BoletaError('Error al enviar boleta'));
+      when(mockBoletaBloc.state).thenReturn(const BoletaError('Error al enviar boleta'));
       when(mockBoletaBloc.stream)
-          .thenAnswer((_) => Stream.value(BoletaError('Error al enviar boleta')));
+          .thenAnswer((_) => Stream.value(const BoletaError('Error al enviar boleta')));
       await tester.pumpWidget(createWidgetUnderTest());
 
       await tester.enterText(find.widgetWithText(TextFormField, 'DNI'), '12345678');
