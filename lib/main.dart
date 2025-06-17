@@ -1,4 +1,14 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart'; 
+import 'package:firebase_core/firebase_core.dart'; // Importa Firebase Core
+import 'package:mobile_app_inventory_qr/features/inventory/presentation/pages/agregar_producto_page.dart';
+import 'package:mobile_app_inventory_qr/features/inventory/presentation/pages/inventory_page.dart';
+import 'firebase_options.dart';  // Importa las configuraciones de Firebase generadas automáticamente
+import 'package:flutter/material.dart'; 
+import 'package:firebase_core/firebase_core.dart'; // Importa Firebase Core
+import 'package:mobile_app_inventory_qr/features/inventory/presentation/pages/agregar_producto_page.dart';
+import 'package:mobile_app_inventory_qr/features/inventory/presentation/pages/inventory_page.dart';
+import 'firebase_options.dart';  // Importa las configuraciones de Firebase generadas automáticamente
+import 'package:go_router/go_router.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -19,11 +29,32 @@ import 'package:mobile_app_inventory_qr/features/sales/presentation/providers/sa
 import 'package:mobile_app_inventory_qr/features/sales/presentation/pages/sales_list_page.dart';
 
 void main() async {
-  WidgetsFlutterBinding.ensureInitialized();
+  WidgetsFlutterBinding.ensureInitialized();  // Asegura que las dependencias de Flutter estén inicializadas
   await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
+    options: DefaultFirebaseOptions.currentPlatform,  // Este archivo contiene la configuración de Firebase
   );
-  runApp(const MyApp());
+  runApp(MyApp());
+}
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'Flutter App',
+      theme: ThemeData(
+        primarySwatch: Colors.blue,
+      ),
+      home: MyHomePage(),
+    );
+  }
+
+class MyHomePage extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: Text('Firebase Initialized')),
+      body: Center(child: Text('Firebase is initialized!')),
+    );
+  }
 }
 
 final _router = GoRouter(
@@ -32,17 +63,34 @@ final _router = GoRouter(
     GoRoute(path: '/login', builder: (context, state) => const LoginScreen()),
     GoRoute(path: '/signup', builder: (context, state) => const SignUp()),
     GoRoute(path: '/home', builder: (context, state) => const HomePage()),
-    GoRoute(path: '/boletas_facturas', builder: (context, state) => const BoletasFacturasPage()),
-    GoRoute(path: '/boleta_form', builder: (context, state) => const BoletaFormPage()),
-    GoRoute(path: '/factura_form', builder: (context, state) => const FacturaFormPage()),
-    GoRoute(path: '/inventory', builder: (context, state) => const ListadoProductosPage()),
-    GoRoute(path: '/qr', builder: (context, state) => const QRPage()),
-    GoRoute(path: '/reports', builder: (context, state) => const ReporteScreen()),
-    GoRoute(path: '/sales_list', builder: (context, state) => const SalesListPage()),
     GoRoute(
-      path: '/business-details',
-      builder: (context, state) => const UserDetailsForm(),
-    ),
+        path: '/boletas_facturas',
+        builder: (context, state) => const BoletasFacturasPage()),
+    GoRoute(
+        path: '/boleta_form',
+        builder: (context, state) => const BoletaFormPage()),
+    GoRoute(
+        path: '/factura_form',
+        builder: (context, state) => const FacturaFormPage()),
+
+
+    GoRoute(path: '/qr', builder: (context, state) => const QRPage()),
+    GoRoute(
+      path: '/inventory', builder: (context, state) => const InventoryPage()),
+      GoRoute(
+        path: '/agregar_producto', builder: (context, state) => AgregarProductoPage()),  // Ruta para agregar productos
+      GoRoute(
+        path: '/listado_productos', builder: (context, state) => ListadoProductosPage()),  // Ruta para listar productos
+    GoRoute(
+      path: '/inventory', builder: (context, state) => const InventoryPage()),
+      GoRoute(
+        path: '/agregar_producto', builder: (context, state) => AgregarProductoPage()),  // Ruta para agregar productos
+      GoRoute(
+        path: '/listado_productos', builder: (context, state) => ListadoProductosPage()),  // Ruta para listar productos
+    GoRoute(
+        path: '/reports', builder: (context, state) => const ReporteScreen()),
+    GoRoute(
+        path: '/sales_list', builder: (context, state) => const SalesListPage()),
   ],
 );
 
@@ -165,3 +213,5 @@ class MyApp extends StatelessWidget {
     );
   }
 }
+
+
