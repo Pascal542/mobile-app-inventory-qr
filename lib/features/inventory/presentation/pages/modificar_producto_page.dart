@@ -1,107 +1,116 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import '../../data/models/producto.dart';
-import '../../services/firestore_service.dart'; // Asegúrate de que el servicio Firestore esté importado
+import '../bloc/inventory_bloc.dart';
+import '../../../../core/validation/form_validators.dart';
+import '../../../../core/widgets/app_snackbar.dart';
 
 class ModificarProductoPage extends StatefulWidget {
   final Producto producto;
-
   const ModificarProductoPage({super.key, required this.producto});
 
   @override
-  _ModificarProductoPageState createState() => _ModificarProductoPageState();
+  State<ModificarProductoPage> createState() => _ModificarProductoPageState();
 }
 
 class _ModificarProductoPageState extends State<ModificarProductoPage> {
   final _formKey = GlobalKey<FormState>();
-
-  late String nombre;
-  late int cantidad;
-  late double precio;
-
-  // Instancia del servicio Firestore
-  final FirestoreService firestoreService = FirestoreService();
+  late TextEditingController _nombreController;
+  late TextEditingController _cantidadController;
+  late TextEditingController _precioController;
+  late String _categoria;
 
   @override
   void initState() {
     super.initState();
-    nombre = widget.producto.nombre;
-    cantidad = widget.producto.cantidad;
-    precio = widget.producto.precio;
+    _nombreController = TextEditingController(text: widget.producto.nombre);
+    _cantidadController = TextEditingController(text: widget.producto.cantidad.toString());
+    _precioController = TextEditingController(text: widget.producto.precio.toString());
+    _categoria = widget.producto.categoria;
+  }
+
+  @override
+  void dispose() {
+    _nombreController.dispose();
+    _cantidadController.dispose();
+    _precioController.dispose();
+    super.dispose();
+  }
+
+  void _submitForm() {
+    if (widget.producto.id == null) {
+      AppSnackbar.error(context, 'Error: ID de producto no encontrado.');
+      return;
+    }
+    if (_formKey.currentState!.validate()) {
+      context.read<InventoryBloc>().add(UpdateProduct(
+        productId: widget.producto.id!,
+        nuevoNombre: _nombreController.text.trim(),
+        nuevaCantidad: int.parse(_cantidadController.text),
+        nuevoPrecio: double.parse(_precioController.text),
+        nuevaCategoria: _categoria, // Asumiendo que la categoría no se puede cambiar en esta UI
+      ));
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Modificar Producto')),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            children: [
-              TextFormField(
-                initialValue: nombre,
-                decoration: InputDecoration(labelText: 'Nombre'),
-                validator: (value) =>
-                    value == null || value.isEmpty ? 'Ingrese nombre' : null,
-                onSaved: (value) => nombre = value!,
-              ),
-              TextFormField(
-                initialValue: cantidad.toString(),
-                decoration: const InputDecoration(labelText: 'Cantidad'),
-                keyboardType: TextInputType.number,
-                validator: (value) {
-                  if (value == null || value.isEmpty || int.tryParse(value) == null) {
-                    return 'Ingrese cantidad válida';
-                  }
-                  int cantidadValue = int.parse(value);
-                  // Validación para que la cantidad no sea menor a 0
-                  if (cantidadValue < 0) {
-                    return 'La cantidad no puede ser menor a 0';
-                  }
-                  return null;
-                },
-                onSaved: (value) => cantidad = int.parse(value!),
-              ),
-              TextFormField(
-                initialValue: precio.toString(),
-                decoration: const InputDecoration(labelText: 'Precio'),
-                keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                validator: (value) {
-                  if (value == null || value.isEmpty || double.tryParse(value) == null) {
-                    return 'Ingrese precio válido';
-                  }
-                  double precioValue = double.parse(value);
-                  // Validación para que el precio sea mayor a 0
-                  if (precioValue <= 0) {
-                    return 'El precio debe ser mayor a 0';
-                  }
-                  return null;
-                },
-                onSaved: (value) => precio = double.parse(value!),
-              ),
-              const SizedBox(height: 20),
-              ElevatedButton(
-                child: Text('Guardar cambios'),
-                onPressed: () async {
-                  if (_formKey.currentState!.validate()) {
-                    _formKey.currentState!.save();
-
-                    // Llamar al servicio de Firestore para actualizar el producto por su nombre
-                    await firestoreService.actualizarProductoPorNombre(
-                      widget.producto.nombre, // El nombre original del producto
-                      nombre,  // El nuevo nombre
-                      cantidad,  // La nueva cantidad
-                      precio,  // El nuevo precio
-                      widget.producto.categoria,  // La nueva categoría
+      appBar: AppBar(
+        title: const Text('Modificar Producto'),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => context.go('/inventory'),
+        ),
+      ),
+      body: BlocListener<InventoryBloc, InventoryState>(
+        listener: (context, state) {
+          if (state is ProductUpdated) {
+            AppSnackbar.success(context, '✅ Producto actualizado exitosamente');
+            context.go('/listado_productos');
+          } else if (state is InventoryError) {
+            AppSnackbar.error(context, '❌ Error al actualizar: ${state.message}');
+          }
+        },
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Form(
+            key: _formKey,
+            child: Column(
+              children: [
+                TextFormField(
+                  controller: _nombreController,
+                  decoration: const InputDecoration(labelText: 'Nombre'),
+                  validator: FormValidators.name,
+                ),
+                const SizedBox(height: 16),
+                TextFormField(
+                  controller: _cantidadController,
+                  decoration: const InputDecoration(labelText: 'Cantidad'),
+                  keyboardType: TextInputType.number,
+                  validator: FormValidators.nonNegative,
+                ),
+                const SizedBox(height: 16),
+                TextFormField(
+                  controller: _precioController,
+                  decoration: const InputDecoration(labelText: 'Precio'),
+                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  validator: FormValidators.price,
+                ),
+                const SizedBox(height: 20),
+                BlocBuilder<InventoryBloc, InventoryState>(
+                  builder: (context, state) {
+                    return ElevatedButton(
+                      onPressed: state is InventoryLoading ? null : _submitForm,
+                      child: state is InventoryLoading 
+                          ? const CircularProgressIndicator(valueColor: AlwaysStoppedAnimation<Color>(Colors.white))
+                          : const Text('Guardar Cambios'),
                     );
-
-                    // Regresar a la página anterior
-                    Navigator.pop(context);
-                  }
-                },
-              )
-            ],
+                  },
+                ),
+              ],
+            ),
           ),
         ),
       ),

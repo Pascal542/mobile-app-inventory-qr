@@ -1,12 +1,14 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:equatable/equatable.dart';
+import 'package:mobile_app_inventory_qr/features/auth/presentation/bloc/auth_bloc.dart';
 import '../../domain/usecases/send_boleta_usecase.dart';
 import '../../domain/usecases/get_last_document_number_usecase.dart';
 import '../../domain/usecases/get_boleta_status_usecase.dart';
-import '../../domain/usecases/get_boleta_pdf_usecase.dart';
 import '../../data/models/boleta_request.dart';
 import '../../data/models/boleta_response.dart';
 import '../../data/datasources/sales_firestore_service.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'dart:developer' as developer;
 
 // Events
 abstract class BoletaEvent extends Equatable {
@@ -38,28 +40,17 @@ class GetLastDocumentNumberEvent extends BoletaEvent {
   List<Object> get props => [type, series];
 }
 
-class GetBoletaStatusEvent extends BoletaEvent {
-  final String documentId;
+class CheckBoletaStatusEvent extends BoletaEvent {
+  final String apiDocumentId;
+  final String firestoreDocumentId;
 
-  const GetBoletaStatusEvent(this.documentId);
-
-  @override
-  List<Object> get props => [documentId];
-}
-
-class GetBoletaPdfEvent extends BoletaEvent {
-  final String documentId;
-  final String format;
-  final String fileName;
-
-  const GetBoletaPdfEvent({
-    required this.documentId,
-    required this.format,
-    required this.fileName,
+  const CheckBoletaStatusEvent({
+    required this.apiDocumentId,
+    required this.firestoreDocumentId,
   });
 
   @override
-  List<Object> get props => [documentId, format, fileName];
+  List<Object> get props => [apiDocumentId, firestoreDocumentId];
 }
 
 // States
@@ -92,22 +83,13 @@ class LastDocumentNumberLoaded extends BoletaState {
   List<Object> get props => [number];
 }
 
-class BoletaStatusLoaded extends BoletaState {
+class BoletaStatusUpdated extends BoletaState {
   final BoletaDocumentStatus status;
 
-  const BoletaStatusLoaded(this.status);
+  const BoletaStatusUpdated(this.status);
 
   @override
   List<Object> get props => [status];
-}
-
-class BoletaPdfLoaded extends BoletaState {
-  final String pdf;
-
-  const BoletaPdfLoaded(this.pdf);
-
-  @override
-  List<Object> get props => [pdf];
 }
 
 class BoletaError extends BoletaState {
@@ -119,58 +101,75 @@ class BoletaError extends BoletaState {
   List<Object> get props => [message];
 }
 
+class BoletaStatusChecked extends BoletaState {
+  final String status;
+
+  const BoletaStatusChecked(this.status);
+
+  @override
+  List<Object> get props => [status];
+}
+
 // BLoC
 class BoletaBloc extends Bloc<BoletaEvent, BoletaState> {
   final SendBoletaUseCase _sendBoletaUseCase;
   final GetLastDocumentNumberUseCase _getLastDocumentNumberUseCase;
   final GetBoletaStatusUseCase _getBoletaStatusUseCase;
-  final GetBoletaPdfUseCase _getBoletaPdfUseCase;
+  final AuthBloc _authBloc;
 
   BoletaBloc({
     required SendBoletaUseCase sendBoletaUseCase,
     required GetLastDocumentNumberUseCase getLastDocumentNumberUseCase,
     required GetBoletaStatusUseCase getBoletaStatusUseCase,
-    required GetBoletaPdfUseCase getBoletaPdfUseCase,
+    required AuthBloc authBloc,
   })  : _sendBoletaUseCase = sendBoletaUseCase,
         _getLastDocumentNumberUseCase = getLastDocumentNumberUseCase,
         _getBoletaStatusUseCase = getBoletaStatusUseCase,
-        _getBoletaPdfUseCase = getBoletaPdfUseCase,
+        _authBloc = authBloc,
         super(BoletaInitial()) {
     on<SendBoletaEvent>(_onSendBoleta);
     on<GetLastDocumentNumberEvent>(_onGetLastDocumentNumber);
-    on<GetBoletaStatusEvent>(_onGetBoletaStatus);
-    on<GetBoletaPdfEvent>(_onGetBoletaPdf);
+    on<CheckBoletaStatusEvent>(_onCheckBoletaStatus);
   }
 
   Future<void> _onSendBoleta(
     SendBoletaEvent event,
     Emitter<BoletaState> emit,
   ) async {
+    emit(BoletaLoading());
     try {
-      emit(BoletaLoading());
-      final response = await _sendBoletaUseCase(event.request);
+      final (response, newDocId) = await _sendBoletaUseCase(event.request);
+      developer.log('Respuesta de la API al enviar boleta: ${response.toJson()}', name: 'BoletaBloc');
+      
+      final state = _authBloc.state;
+      if (state is Authenticated) {
+        final userId = state.user.uid.split('_').last;
+        final docBody = event.request.documentBody;
+        final saleData = {
+          'documentId': newDocId,
+          'type': docBody.invoiceTypeCode,
+          'status': 'APROBADO',
+          'sunatResponse': response.toJson(),
+          'isCancelled': false,
+          'cancellationReason': '',
+          'customerName': docBody.accountingCustomerParty.registrationName,
+          'customerRuc': docBody.accountingCustomerParty.id,
+          'total': docBody.legalMonetaryTotal.payableAmount,
+          'items': docBody.invoiceLines.map((line) => line.toJson()).toList(),
+          'userId': userId,
+          'createdAt': FieldValue.serverTimestamp(),
+          'fileName': event.request.fileName,
+        };
 
-      // Save sale metadata to Firestore (keep this)
-      final fileName = event.request.fileName;
-      final docId = fileName.split('-').sublist(2).join('-');
-      final data = response.toJson();
-      data.remove('status');
-      await SalesFirestoreService.saveSale({
-        ...data,
-        'fileName': fileName,
-        'type': event.request.documentBody.invoiceTypeCode,
-        'issueTime': DateTime.now().millisecondsSinceEpoch ~/ 1000,
-      }, docId);
+        await SalesFirestoreService.saveSale(saleData, newDocId);
+        developer.log('Datos de boleta guardados en Firestore con ID: $newDocId', name: 'BoletaBloc');
 
-      // Get the PDF (do not save to Firestore)
-      final pdf = await _getBoletaPdfUseCase(
-        response.documentId,
-        'A4',
-        fileName,
-      );
-
-      emit(BoletaSent(response));
+        emit(BoletaSent(response));
+      } else {
+        emit(const BoletaError('Usuario no autenticado.'));
+      }
     } catch (e) {
+      developer.log('Error en _onSendBoleta: $e', error: e, name: 'BoletaBloc');
       emit(BoletaError(e.toString()));
     }
   }
@@ -191,33 +190,20 @@ class BoletaBloc extends Bloc<BoletaEvent, BoletaState> {
     }
   }
 
-  Future<void> _onGetBoletaStatus(
-    GetBoletaStatusEvent event,
+  Future<void> _onCheckBoletaStatus(
+    CheckBoletaStatusEvent event,
     Emitter<BoletaState> emit,
   ) async {
     try {
-      emit(BoletaLoading());
-      final status = await _getBoletaStatusUseCase(event.documentId);
-      emit(BoletaStatusLoaded(status));
-    } catch (e) {
-      emit(BoletaError(e.toString()));
-    }
-  }
-
-  Future<void> _onGetBoletaPdf(
-    GetBoletaPdfEvent event,
-    Emitter<BoletaState> emit,
-  ) async {
-    try {
-      emit(BoletaLoading());
-      final pdf = await _getBoletaPdfUseCase(
-        event.documentId,
-        event.format,
-        event.fileName,
+      final status = await _getBoletaStatusUseCase(event.apiDocumentId);
+      await SalesFirestoreService.updateSaleStatus(
+        event.firestoreDocumentId,
+        status.status,
+        status.toJson(),
       );
-      emit(BoletaPdfLoaded(pdf));
+      emit(BoletaStatusChecked(status.status));
     } catch (e) {
-      emit(BoletaError(e.toString()));
+      emit(BoletaError('Error al verificar el estado: ${e.toString()}'));
     }
   }
 } 

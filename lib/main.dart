@@ -1,96 +1,192 @@
-import 'package:flutter/material.dart'; 
-import 'package:firebase_core/firebase_core.dart'; // Importa Firebase Core
-import 'package:mobile_app_inventory_qr/features/inventory/presentation/pages/agregar_producto_page.dart';
-import 'package:mobile_app_inventory_qr/features/inventory/presentation/pages/inventory_page.dart';
-import 'firebase_options.dart';  // Importa las configuraciones de Firebase generadas automáticamente
-import 'package:flutter/material.dart'; 
-import 'package:firebase_core/firebase_core.dart'; // Importa Firebase Core
-import 'package:mobile_app_inventory_qr/features/inventory/presentation/pages/agregar_producto_page.dart';
-import 'package:mobile_app_inventory_qr/features/inventory/presentation/pages/inventory_page.dart';
-import 'firebase_options.dart';  // Importa las configuraciones de Firebase generadas automáticamente
-import 'package:go_router/go_router.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:go_router/go_router.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:firebase_core/firebase_core.dart';
-import 'package:mobile_app_inventory_qr/features/auth/presentation/pages/users_dataform.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
-import 'firebase_options.dart';
+// Firebase configuration
+import 'core/config/firebase_config.dart';
+
+// Environment configuration
+import 'core/config/env_config.dart';
+import 'core/utils/logger.dart';
+
+// Dependency injection
+import 'core/di/dependency_injection.dart';
+
+// Auth features
 import 'package:mobile_app_inventory_qr/features/auth/presentation/pages/login.dart';
-import 'package:mobile_app_inventory_qr/features/auth/presentation/pages/signup.dart';
+import 'package:mobile_app_inventory_qr/features/auth/presentation/pages/signup_page.dart';
+import 'package:mobile_app_inventory_qr/features/auth/presentation/pages/forgot_password_page.dart';
+import 'package:mobile_app_inventory_qr/features/auth/presentation/pages/user_details_form.dart';
+import 'package:mobile_app_inventory_qr/features/auth/presentation/bloc/auth_bloc.dart';
+
+// Inventory features
+import 'package:mobile_app_inventory_qr/features/inventory/presentation/pages/agregar_producto_page.dart';
+import 'package:mobile_app_inventory_qr/features/inventory/presentation/pages/inventory_page.dart';
 import 'package:mobile_app_inventory_qr/features/inventory/presentation/pages/listado_productos_page.dart';
-import 'package:mobile_app_inventory_qr/features/qr/presentation/pages/qr_page.dart';
-import 'package:mobile_app_inventory_qr/features/reports/presentation/pages/report_screen.dart';
-import 'package:mobile_app_inventory_qr/features/sales/presentation/pages/boletas_facturas_page.dart';
+import 'package:mobile_app_inventory_qr/features/inventory/presentation/pages/modificar_producto_page.dart';
+import 'package:mobile_app_inventory_qr/features/inventory/data/models/producto.dart';
+import 'package:mobile_app_inventory_qr/features/inventory/presentation/pages/inventory_shell.dart';
+
+// Sales features
 import 'package:mobile_app_inventory_qr/features/sales/presentation/pages/home_page.dart';
+import 'package:mobile_app_inventory_qr/features/sales/presentation/pages/boletas_facturas_page.dart';
 import 'package:mobile_app_inventory_qr/features/sales/presentation/pages/boleta_form_page.dart';
 import 'package:mobile_app_inventory_qr/features/sales/presentation/pages/factura_form_page.dart';
-import 'package:mobile_app_inventory_qr/features/sales/presentation/providers/sales_providers.dart';
 import 'package:mobile_app_inventory_qr/features/sales/presentation/pages/sales_list_page.dart';
+import 'package:mobile_app_inventory_qr/features/sales/presentation/providers/sales_providers.dart';
+
+// QR features
+import 'package:mobile_app_inventory_qr/features/qr/presentation/pages/qr_page.dart';
+
+// Reports features
+import 'package:mobile_app_inventory_qr/features/reports/presentation/pages/report_page.dart';
+import 'package:mobile_app_inventory_qr/features/reports/data/general.dart';
+import 'package:mobile_app_inventory_qr/features/reports/data/inventario.dart';
+import 'package:mobile_app_inventory_qr/features/reports/data/pagos.dart';
+import 'package:mobile_app_inventory_qr/features/reports/data/generar_pdf.dart';
+import 'package:mobile_app_inventory_qr/features/inventory/presentation/bloc/inventory_bloc.dart';
 
 void main() async {
-  WidgetsFlutterBinding.ensureInitialized();  // Asegura que las dependencias de Flutter estén inicializadas
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,  // Este archivo contiene la configuración de Firebase
-  );
-  runApp(MyApp());
+  WidgetsFlutterBinding.ensureInitialized();
+  
+  // Load environment variables
+  try {
+    await EnvConfig.load();
+    AppLogger.success("Environment variables loaded successfully");
+  } catch (e) {
+    AppLogger.warning("Could not load .env file, using default values: $e");
+  }
+  
+  // Initialize dependency injection
+  try {
+    await DependencyInjection.init();
+    AppLogger.success("Dependency injection initialized successfully");
+  } catch (e) {
+    AppLogger.error("Error initializing dependency injection", e);
+  }
+  
+  // Initialize Firebase with dynamic configuration
+  try {
+    await FirebaseConfig.initializeApp();
+    AppLogger.success("Firebase initialized successfully");
+    
+    // Log Firebase configuration info for debugging
+    final firebaseInfo = FirebaseConfig.debugInfo;
+    AppLogger.info("Firebase configuration: $firebaseInfo");
+  } catch (e) {
+    AppLogger.error("Error initializing Firebase", e);
+    // Continue app execution even if Firebase fails
+  }
+  
+  runApp(const MyApp());
 }
 
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Flutter App',
-      theme: ThemeData(
-        primarySwatch: Colors.blue,
-      ),
-      home: MyHomePage(),
-    );
-  }
-
-class MyHomePage extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: Text('Firebase Initialized')),
-      body: Center(child: Text('Firebase is initialized!')),
-    );
-  }
-}
-
+// GoRouter configuration
 final _router = GoRouter(
   initialLocation: '/login',
   routes: [
-    GoRoute(path: '/login', builder: (context, state) => const LoginScreen()),
-    GoRoute(path: '/signup', builder: (context, state) => const SignUp()),
-    GoRoute(path: '/home', builder: (context, state) => const HomePage()),
+    // Auth routes
     GoRoute(
-        path: '/boletas_facturas',
-        builder: (context, state) => const BoletasFacturasPage()),
+      path: '/login', 
+      builder: (context, state) => const LoginScreen()
+    ),
     GoRoute(
-        path: '/boleta_form',
-        builder: (context, state) => const BoletaFormPage()),
+      path: '/signup', 
+      builder: (context, state) => const SignupPage()
+    ),
     GoRoute(
-        path: '/factura_form',
-        builder: (context, state) => const FacturaFormPage()),
-
-
-    GoRoute(path: '/qr', builder: (context, state) => const QRPage()),
+      path: '/forgot_password', 
+      builder: (context, state) => const ForgotPasswordPage()
+    ),
     GoRoute(
-      path: '/inventory', builder: (context, state) => const InventoryPage()),
-      GoRoute(
-        path: '/agregar_producto', builder: (context, state) => AgregarProductoPage()),  // Ruta para agregar productos
-      GoRoute(
-        path: '/listado_productos', builder: (context, state) => ListadoProductosPage()),  // Ruta para listar productos
+      path: '/user_details', 
+      builder: (context, state) => const UserDetailsForm()
+    ),
+    
+    // Main routes
     GoRoute(
-      path: '/inventory', builder: (context, state) => const InventoryPage()),
-      GoRoute(
-        path: '/agregar_producto', builder: (context, state) => AgregarProductoPage()),  // Ruta para agregar productos
-      GoRoute(
-        path: '/listado_productos', builder: (context, state) => ListadoProductosPage()),  // Ruta para listar productos
+      path: '/home', 
+      builder: (context, state) => const HomePage()
+    ),
+    
+    // Sales routes
     GoRoute(
-        path: '/reports', builder: (context, state) => const ReporteScreen()),
+      path: '/boletas_facturas',
+      builder: (context, state) => const BoletasFacturasPage()
+    ),
     GoRoute(
-        path: '/sales_list', builder: (context, state) => const SalesListPage()),
+      path: '/boleta_form',
+      builder: (context, state) => const BoletaFormPage()
+    ),
+    GoRoute(
+      path: '/factura_form',
+      builder: (context, state) => const FacturaFormPage()
+    ),
+    GoRoute(
+      path: '/sales_list',
+      builder: (context, state) => const SalesListPage()
+    ),
+    
+    // Inventory routes
+    ShellRoute(
+      builder: (context, state, child) {
+        return BlocProvider(
+          create: (context) => DependencyInjection.get<InventoryBloc>(),
+          child: InventoryShell(child: child),
+        );
+      },
+      routes: [
+        GoRoute(
+          path: '/inventory', 
+          builder: (context, state) => const InventoryPage()
+        ),
+        GoRoute(
+          path: '/agregar_producto', 
+          builder: (context, state) => const AgregarProductoPage()
+        ),
+        GoRoute(
+          path: '/listado_productos', 
+          builder: (context, state) => const ListadoProductosPage()
+        ),
+        GoRoute(
+          path: '/modificar_producto', 
+          builder: (context, state) {
+            final producto = state.extra as Producto;
+            return ModificarProductoPage(producto: producto);
+          }
+        ),
+      ],
+    ),
+    
+    // QR routes
+    GoRoute(
+      path: '/qr', 
+      builder: (context, state) => const QRPage()
+    ),
+    
+    // Reports routes
+    GoRoute(
+      path: '/reports', 
+      builder: (context, state) => const ReportPage()
+    ),
+    GoRoute(
+      path: '/reporte_general', 
+      builder: (context, state) => const ReporteGeneral()
+    ),
+    GoRoute(
+      path: '/reporte_inventario', 
+      builder: (context, state) => const ReporteInventario()
+    ),
+    GoRoute(
+      path: '/reporte_pagos', 
+      builder: (context, state) => const ReportePagos()
+    ),
+    GoRoute(
+      path: '/reporte_pdf', 
+      builder: (context, state) => const GenerarPDF()
+    ),
   ],
 );
 
@@ -100,7 +196,14 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MultiBlocProvider(
-      providers: SalesProviders.providers,
+      providers: [
+        // Auth BLoC - disponible globalmente
+        BlocProvider<AuthBloc>(
+          create: (context) => DependencyInjection.get<AuthBloc>(),
+        ),
+        // Sales providers
+        ...SalesProviders.providers,
+      ],
       child: MaterialApp.router(
         title: 'Vendify',
         theme: ThemeData(
@@ -108,7 +211,7 @@ class MyApp extends StatelessWidget {
             seedColor: Colors.deepPurple,
             primary: Colors.deepPurple,
             secondary: Colors.deepPurple,
-            background: const Color(0xFFF8F3FF),
+            surface: const Color(0xFFF8F3FF),
           ),
           useMaterial3: true,
           scaffoldBackgroundColor: const Color(0xFFF8F3FF),
@@ -191,8 +294,7 @@ class MyApp extends StatelessWidget {
         routerConfig: _router,
         builder: (context, child) {
           return PopScope(
-            canPop:
-                _router.routerDelegate.currentConfiguration.uri.path == '/login',
+            canPop: _router.routerDelegate.currentConfiguration.uri.path == '/login',
             onPopInvoked: (didPop) async {
               if (!didPop) {
                 context.go('/home');

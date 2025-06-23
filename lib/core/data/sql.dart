@@ -29,13 +29,7 @@ class DatabaseHelper {
     );
   }
 
-  //Now we create login and sign up method
-  //as we create sqlite other functionality in our previous video
-
-  //IF you didn't watch my previous videos, check part 1 and part 2
-
-  //Login Method
-
+  /// Authenticate user with username and password
   Future<bool> login(Users user) async {
     final Database db = await initDB();
 
@@ -50,14 +44,14 @@ class DatabaseHelper {
     }
   }
 
-  //Sign up
+  /// Register a new user
   Future<int> signup(Users user) async {
     final Database db = await initDB();
 
     return db.insert('users', user.toMap());
   }
 
-  //Search Method
+  /// Search notes by keyword
   Future<List<NoteModel>> searchNotes(String keyword) async {
     final Database db = await initDB();
     List<Map<String, Object?>> searchResult = await db.rawQuery(
@@ -69,26 +63,26 @@ class DatabaseHelper {
 
   //CRUD Methods
 
-  //Create Note
+  /// Create a new note
   Future<int> createNote(NoteModel note) async {
     final Database db = await initDB();
     return db.insert('notes', note.toMap());
   }
 
-  //Get notes
+  /// Get all notes
   Future<List<NoteModel>> getNotes() async {
     final Database db = await initDB();
     List<Map<String, Object?>> result = await db.query('notes');
     return result.map((e) => NoteModel.fromMap(e)).toList();
   }
 
-  //Delete Notes
+  /// Delete a note by ID
   Future<int> deleteNote(int id) async {
     final Database db = await initDB();
     return db.delete('notes', where: 'noteId = ?', whereArgs: [id]);
   }
 
-  //Update Notes
+  /// Update a note
   Future<int> updateNote(title, content, noteId) async {
     final Database db = await initDB();
     return db.rawUpdate(

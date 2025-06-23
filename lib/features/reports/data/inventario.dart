@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
+import 'package:go_router/go_router.dart';
 
 class ReporteInventario extends StatelessWidget {
   const ReporteInventario({super.key});
@@ -61,7 +62,15 @@ class ReporteInventario extends StatelessWidget {
     final colores = [Colors.blue, Colors.orange, Colors.green];
 
     return Scaffold(
-      appBar: AppBar(title: const Text('📦 Reporte de Inventario')),
+      appBar: AppBar(
+        title: const Text('📦 Reporte de Inventario'),
+        backgroundColor: Colors.deepPurple,
+        foregroundColor: Colors.white,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => context.go('/reports'),
+        ),
+      ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(

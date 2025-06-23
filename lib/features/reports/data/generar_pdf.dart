@@ -2,6 +2,7 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
+import 'package:go_router/go_router.dart';
 
 class GenerarPDF extends StatelessWidget {
   const GenerarPDF({super.key});
@@ -146,6 +147,10 @@ class GenerarPDF extends StatelessWidget {
         centerTitle: true,
         backgroundColor: Colors.deepPurple,
         foregroundColor: Colors.white,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => context.go('/reports'),
+        ),
       ),
       backgroundColor: const Color(0xFFF8F3FF),
       body: Center(

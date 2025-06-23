@@ -3,7 +3,14 @@ import 'package:go_router/go_router.dart';
 import '../../core/constants/sales_api_constants.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../bloc/factura_bloc.dart';
+import '../../../auth/presentation/bloc/auth_bloc.dart';
+import '../../../auth/data/models/user_model.dart';
 import '../../data/models/boleta_request.dart';
+import '../../../../core/validation/form_validators.dart';
+import '../../../../core/widgets/app_snackbar.dart';
+import '../../../../core/di/dependency_injection.dart';
+import 'package:mobile_app_inventory_qr/features/inventory/data/models/producto.dart';
+import 'package:mobile_app_inventory_qr/features/inventory/services/firestore_service.dart';
 
 class FacturaFormPage extends StatefulWidget {
   const FacturaFormPage({super.key});
@@ -14,41 +21,82 @@ class FacturaFormPage extends StatefulWidget {
 
 class _FacturaFormPageState extends State<FacturaFormPage> {
   final _formKey = GlobalKey<FormState>();
-  // Series y correlativo para fileName automático
   final String _series = 'F001';
   String _correlative = '00000001';
+  
+  // Customer controllers
   final TextEditingController _customerIdCtrl = TextEditingController();
   final TextEditingController _customerNameCtrl = TextEditingController();
+
+  // Item form controllers
   final TextEditingController _quantityCtrl = TextEditingController();
-  final TextEditingController _priceCtrl = TextEditingController();
-  final TextEditingController _descriptionCtrl = TextEditingController();
+  
+  // State variables
+  List<Producto> _inventoryProducts = [];
+  List<InvoiceLine> _invoiceLines = [];
+  bool _isLoadingInventory = true;
+  Producto? _selectedProduct;
+  String? _selectedCategory;
+  double _currentPrice = 0.0;
 
-  double round2(double value) => double.parse(value.toStringAsFixed(2));
+  // Get unique categories from products
+  List<String> get _categories {
+    final categories = _inventoryProducts.map((p) => p.categoria).toSet().toList();
+    categories.sort();
+    return categories.where((cat) => cat.isNotEmpty).toList();
+  }
 
-  String? _validateRuc(String? value) {
-    if (value == null || value.isEmpty) return 'Obligatorio';
-    if (value.length != 11) return 'El RUC debe tener 11 dígitos';
-    final validPrefixes = ['10', '15', '16', '17', '20'];
-    if (!validPrefixes.any((prefix) => value.startsWith(prefix))) {
-      return 'El RUC debe empezar con 10, 15, 16, 17 o 20';
+  // Get products filtered by selected category
+  List<Producto> get _filteredProducts {
+    if (_selectedCategory == null) {
+      // Si no hay categoría seleccionada, mostrar todos los productos con stock
+      return _inventoryProducts.where((p) => p.cantidad > 0).toList();
     }
-    return null;
+    return _inventoryProducts
+        .where((p) => p.categoria == _selectedCategory && p.cantidad > 0)
+        .toList();
   }
 
   @override
   void initState() {
     super.initState();
+    _loadInitialData();
+  }
+  
+  Future<void> _loadInitialData() async {
+    final authState = context.read<AuthBloc>().state;
+    if (authState is Authenticated) {
+      final userId = authState.user.uid.split('_').last;
+      await _fetchInventory(userId);
+    }
     _getLastDocumentNumber();
   }
 
-  void _getLastDocumentNumber() {
-    // type: '01' para factura
-    context.read<FacturaBloc>().add(
-      GetLastDocumentNumberEvent(
-        type: '01',
-        series: _series,
-      ),
+  Future<void> _fetchInventory(String userId) async {
+    setState(() => _isLoadingInventory = true);
+    final service = FirestoreService();
+    final productsStream = service.obtenerProductos(userId);
+    productsStream.listen(
+      (products) {
+        if (mounted) {
+          setState(() {
+            _inventoryProducts = products;
+            _isLoadingInventory = false;
+          });
+        }
+      },
+      onError: (error) {
+        if (mounted) {
+          setState(() => _isLoadingInventory = false);
+        }
+      },
     );
+  }
+
+  void _getLastDocumentNumber() {
+    context.read<FacturaBloc>().add(
+          GetLastDocumentNumberEvent(type: '01', series: _series),
+        );
   }
 
   @override
@@ -56,232 +104,544 @@ class _FacturaFormPageState extends State<FacturaFormPage> {
     _customerIdCtrl.dispose();
     _customerNameCtrl.dispose();
     _quantityCtrl.dispose();
-    _priceCtrl.dispose();
-    _descriptionCtrl.dispose();
     super.dispose();
   }
 
-  void _submit() {
-    if (_formKey.currentState!.validate()) {
-      final now = DateTime.now();
-      final dateStr =
-          "${now.year.toString().padLeft(4, '0')}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}";
-      final timeStr =
-          "${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}:${now.second.toString().padLeft(2, '0')}";
-      final quantity = int.parse(_quantityCtrl.text);
-      final price = round2(double.parse(_priceCtrl.text));
-      final priceWithIgv = round2(price * 1.18);
-      final subtotal = round2(quantity * price);
-      final igv = round2(subtotal * 0.18);
-      final total = round2(subtotal + igv);
-      final fileName = '${ApiConstants.rucEmisor}-01-$_series-$_correlative';
-      final request = BoletaRequest(
-        personaId: ApiConstants.personaId,
-        personaToken: ApiConstants.personaToken,
-        fileName: fileName,
-        documentBody: BoletaDocumentBody(
-          ublVersionId: '2.1',
-          customizationId: '2.0',
-          id: '$_series-$_correlative',
-          issueDate: dateStr,
-          issueTime: timeStr,
-          invoiceTypeCode: '01',
-          notes: [
-            Note(
-              text: '${total.toStringAsFixed(2)} SOLES',
-              languageLocaleId: '1000',
+  void _selectProduct(Producto product) {
+    setState(() {
+      _selectedProduct = product;
+      _currentPrice = product.precio;
+    });
+  }
+
+  void _addItem() {
+    if (_selectedProduct == null || _quantityCtrl.text.isEmpty) {
+      AppSnackbar.error(context, 'Seleccione un producto y una cantidad.');
+      return;
+    }
+
+    final quantity = int.tryParse(_quantityCtrl.text);
+    if (quantity == null || quantity <= 0) {
+      AppSnackbar.error(context, 'La cantidad debe ser un número positivo.');
+      return;
+    }
+    
+    if (quantity > _selectedProduct!.cantidad) {
+      AppSnackbar.error(context, 'Stock insuficiente. Disponibles: ${_selectedProduct!.cantidad}');
+      return;
+    }
+    
+    final price = _currentPrice;
+    final priceWithIgv = round2(price * 1.18);
+    final subtotal = round2(quantity * price);
+    
+    final newLine = InvoiceLine(
+      id: _invoiceLines.length + 1,
+      invoicedQuantity: quantity,
+      lineExtensionAmount: subtotal,
+      pricingReference: PricingReference(priceAmount: priceWithIgv, priceTypeCode: '01'),
+      taxTotal: TaxTotal(
+        taxAmount: round2(subtotal * 0.18),
+        taxSubtotals: [
+          TaxSubtotal(
+            taxableAmount: subtotal,
+            taxAmount: round2(subtotal * 0.18),
+            taxCategory: TaxCategory(
+              percent: 18,
+              taxExemptionReasonCode: '10',
+              taxScheme: TaxScheme(id: '1000', name: 'IGV', taxTypeCode: 'VAT'),
             ),
-          ],
-          documentCurrencyCode: 'PEN',
-          accountingSupplierParty: AccountingSupplierParty(
-            id: ApiConstants.rucEmisor,
-            registrationName: ApiConstants.registrationName,
-            partyName: ApiConstants.partyName,
-            address: ApiConstants.address,
           ),
-          accountingCustomerParty: AccountingCustomerParty(
-            id: _customerIdCtrl.text.trim(),
-            registrationName: _customerNameCtrl.text,
-            schemeId: '6',
-          ),
-          taxTotal: TaxTotal(
-            taxAmount: igv,
-            taxSubtotals: [
-              TaxSubtotal(
-                taxableAmount: subtotal,
-                taxAmount: igv,
-                taxCategory: TaxCategory(
-                  percent: 18,
-                  taxExemptionReasonCode: '10',
-                  taxScheme: TaxScheme(
-                    id: '1000',
-                    name: 'IGV',
-                    taxTypeCode: 'VAT',
-                  ),
-                ),
+        ],
+      ),
+      item: Item(description: _selectedProduct!.nombre, sellersItemId: _selectedProduct!.id ?? 'N/A'),
+      price: Price(priceAmount: price),
+    );
+
+    setState(() {
+      _invoiceLines.add(newLine);
+      _quantityCtrl.clear();
+      _selectedProduct = null;
+      _currentPrice = 0.0;
+    });
+  }
+
+  Future<void> _submit() async {
+    final authState = context.read<AuthBloc>().state;
+    if (authState is! Authenticated) {
+      AppSnackbar.error(context, 'Error: Usuario no autenticado.');
+      return;
+    }
+    
+    if (!_formKey.currentState!.validate() || _invoiceLines.isEmpty) {
+      AppSnackbar.error(context, 'Por favor, complete los datos del cliente y añada al menos un producto.');
+      return;
+    }
+
+    // Stock check before submitting
+    for (var line in _invoiceLines) {
+      final productInInventory = _inventoryProducts.firstWhere((p) => p.id == line.item.sellersItemId);
+      if (productInInventory.cantidad < line.invoicedQuantity) {
+        AppSnackbar.error(context, 'Stock insuficiente para ${line.item.description}.');
+        return;
+      }
+    }
+    
+    _formKey.currentState!.save();
+    
+    final grandTotal = _invoiceLines.fold<double>(0.0, (sum, item) => sum + item.lineExtensionAmount);
+    final totalIgv = round2(grandTotal * 0.18);
+    final totalPayable = round2(grandTotal + totalIgv);
+    final fileName = '${ApiConstants.rucEmisor}-01-$_series-$_correlative';
+    final now = DateTime.now();
+    final dateStr = "${now.year}-${'${now.month}'.padLeft(2, '0')}-${'${now.day}'.padLeft(2, '0')}";
+    final timeStr = "${'${now.hour}'.padLeft(2, '0')}:${'${now.minute}'.padLeft(2, '0')}:${'${now.second}'.padLeft(2, '0')}";
+    
+    final request = BoletaRequest(
+      personaId: ApiConstants.personaId,
+      personaToken: ApiConstants.personaToken,
+      fileName: fileName,
+      documentBody: BoletaDocumentBody(
+        ublVersionId: '2.1',
+        customizationId: '2.0',
+        id: '$_series-$_correlative',
+        issueDate: dateStr,
+        issueTime: timeStr,
+        invoiceTypeCode: '01',
+        notes: [Note(text: '${totalPayable.toStringAsFixed(2)} SOLES', languageLocaleId: '1000')],
+        documentCurrencyCode: 'PEN',
+        accountingSupplierParty: AccountingSupplierParty(
+          id: ApiConstants.rucEmisor,
+          registrationName: ApiConstants.registrationName,
+          partyName: ApiConstants.partyName,
+          address: ApiConstants.address,
+        ),
+        accountingCustomerParty: AccountingCustomerParty(
+          id: _customerIdCtrl.text,
+          registrationName: _customerNameCtrl.text,
+          schemeId: '6', // RUC always uses schemeId '6'
+        ),
+        taxTotal: TaxTotal(
+          taxAmount: totalIgv,
+          taxSubtotals: [
+            TaxSubtotal(
+              taxableAmount: grandTotal,
+              taxAmount: totalIgv,
+              taxCategory: TaxCategory(
+                percent: 18,
+                taxExemptionReasonCode: '10',
+                taxScheme: TaxScheme(id: '1000', name: 'IGV', taxTypeCode: 'VAT'),
               ),
-            ],
-          ),
-          legalMonetaryTotal: LegalMonetaryTotal(
-            lineExtensionAmount: subtotal,
-            taxInclusiveAmount: total,
-            payableAmount: total,
-          ),
-          invoiceLines: [
-            InvoiceLine(
-              id: 1,
-              invoicedQuantity: quantity,
-              lineExtensionAmount: subtotal,
-              pricingReference: PricingReference(
-                priceAmount: priceWithIgv,
-                priceTypeCode: '01',
-              ),
-              taxTotal: TaxTotal(
-                taxAmount: igv,
-                taxSubtotals: [
-                  TaxSubtotal(
-                    taxableAmount: subtotal,
-                    taxAmount: igv,
-                    taxCategory: TaxCategory(
-                      percent: 18,
-                      taxExemptionReasonCode: '10',
-                      taxScheme: TaxScheme(
-                        id: '1000',
-                        name: 'IGV',
-                        taxTypeCode: 'VAT',
-                      ),
-                    ),
-                  ),
-          ],
-              ),
-              item: Item(
-                description: _descriptionCtrl.text,
-                sellersItemId: '01',
-              ),
-              price: Price(priceAmount: price),
             ),
           ],
         ),
-      );
-      context.read<FacturaBloc>().add(SendFacturaEvent(request));
-    }
+        legalMonetaryTotal: LegalMonetaryTotal(
+          lineExtensionAmount: grandTotal,
+          taxInclusiveAmount: totalPayable,
+          payableAmount: totalPayable,
+        ),
+        invoiceLines: _invoiceLines,
+      ),
+    );
+
+    context.read<FacturaBloc>().add(SendFacturaEvent(request));
   }
+  
+  double round2(double value) => double.parse(value.toStringAsFixed(2));
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Crear Factura'),
+        title: const Text('Nueva Factura'),
+        backgroundColor: Colors.deepPurple,
+        foregroundColor: Colors.white,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () => context.go('/boletas_facturas'),
         ),
       ),
       body: BlocConsumer<FacturaBloc, FacturaState>(
-        listener: (context, state) {
-          if (state is LastDocumentNumberLoaded) {
-            setState(() {
-              _correlative = state.number;
-            });
-          } else if (state is FacturaSent) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Factura enviada correctamente'),
-                backgroundColor: Colors.green,
-              ),
-            );
+        listener: (context, state) async {
+          if (state is FacturaSent) {
+            AppSnackbar.success(context, '✅ Factura enviada exitosamente');
+            // Decrease stock after successful sale
+            final authState = context.read<AuthBloc>().state;
+            if(authState is Authenticated){
+              final userId = authState.user.uid.split('_').last;
+              final service = FirestoreService();
+              for (var line in _invoiceLines) {
+                await service.decreaseProductStock(userId, line.item.sellersItemId, line.invoicedQuantity);
+              }
+            }
             context.go('/boletas_facturas');
           } else if (state is FacturaError) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text('Error: ${state.message}'),
-                backgroundColor: Colors.red,
-              ),
-            );
+            AppSnackbar.error(context, '❌ Error: ${state.message}');
+          } else if (state is LastDocumentNumberLoaded) {
+             if(mounted){
+                setState(() => _correlative = state.number);
+             }
           }
         },
         builder: (context, state) {
-          return SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(16),
-          child: Card(
-            child: Padding(
+          return Form(
+            key: _formKey,
+            child: SingleChildScrollView(
               padding: const EdgeInsets.all(16),
-              child: Form(
-                key: _formKey,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Text(
-                      'Detalles de Factura',
-                      style: Theme.of(context).textTheme.titleLarge,
-                    ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  _buildCustomerCard(),
+                  const SizedBox(height: 16),
+                  if (_categories.isNotEmpty) ...[
+                    _buildCategorySelectionCard(),
+                    if (_selectedCategory != null) ...[
+                      const SizedBox(height: 16),
+                      _buildProductsGrid(),
+                      const SizedBox(height: 16),
+                      _buildAddItemCard(),
+                    ],
+                  ] else ...[
+                    _buildProductsGrid(),
                     const SizedBox(height: 16),
-                    TextFormField(
-                      controller: _customerIdCtrl,
-                      decoration: const InputDecoration(
-                        labelText: 'RUC',
-                        prefixIcon: Icon(Icons.business),
-                      ),
-                          validator: _validateRuc,
-                    ),
-                    const SizedBox(height: 16),
-                    TextFormField(
-                      controller: _customerNameCtrl,
-                      decoration: const InputDecoration(
-                        labelText: 'Razón Social',
-                        prefixIcon: Icon(Icons.business_outlined),
-                      ),
-                      validator: (v) =>
-                          v == null || v.isEmpty ? 'Obligatorio' : null,
-                    ),
-                    const SizedBox(height: 16),
-                    TextFormField(
-                      controller: _quantityCtrl,
-                      decoration: const InputDecoration(
-                        labelText: 'Cantidad',
-                        prefixIcon: Icon(Icons.confirmation_number),
-                      ),
-                      keyboardType: TextInputType.number,
-                      validator: (v) =>
-                          v == null || v.isEmpty ? 'Obligatorio' : null,
-                    ),
-                    const SizedBox(height: 16),
-                    TextFormField(
-                      controller: _priceCtrl,
-                      decoration: const InputDecoration(
-                        labelText: 'Precio Unitario',
-                        prefixIcon: Icon(Icons.attach_money),
-                      ),
-                      keyboardType: TextInputType.number,
-                      validator: (v) =>
-                          v == null || v.isEmpty ? 'Obligatorio' : null,
-                    ),
-                    const SizedBox(height: 16),
-                    TextFormField(
-                      controller: _descriptionCtrl,
-                      decoration: const InputDecoration(
-                        labelText: 'Producto',
-                        prefixIcon: Icon(Icons.description),
-                      ),
-                      validator: (v) =>
-                          v == null || v.isEmpty ? 'Obligatorio' : null,
-                    ),
-                    const SizedBox(height: 24),
-                    ElevatedButton(
-                          onPressed: state is FacturaLoading ? null : _submit,
-                          child: state is FacturaLoading
-                              ? const CircularProgressIndicator()
-                              : const Text('Enviar Factura'),
-                    ),
+                    _buildAddItemCard(),
                   ],
+                  const SizedBox(height: 16),
+                  _buildItemsList(),
+                  const SizedBox(height: 24),
+                  ElevatedButton(
+                    onPressed: state is FacturaLoading ? null : _submit,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.deepPurple,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                    ),
+                    child: state is FacturaLoading
+                        ? const SizedBox(
+                            height: 20, width: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                            ),
+                          )
+                        : const Text('Guardar y Enviar a SUNAT', style: TextStyle(fontSize: 16)),
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildCustomerCard() {
+    return Card(
+      elevation: 2,
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Datos del Cliente', style: Theme.of(context).textTheme.titleLarge),
+            const SizedBox(height: 16),
+            TextFormField(
+              controller: _customerIdCtrl,
+              decoration: const InputDecoration(labelText: 'RUC', prefixIcon: Icon(Icons.business)),
+              validator: FormValidators.ruc,
+            ),
+            const SizedBox(height: 16),
+            TextFormField(
+              controller: _customerNameCtrl,
+              decoration: const InputDecoration(labelText: 'Razón Social', prefixIcon: Icon(Icons.business_outlined)),
+              validator: FormValidators.name,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCategorySelectionCard() {
+    return Card(
+      elevation: 2,
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Seleccionar Categoría', style: Theme.of(context).textTheme.titleLarge),
+            const SizedBox(height: 16),
+            if (_isLoadingInventory)
+              const Center(child: CircularProgressIndicator())
+            else if (_categories.isEmpty)
+              const Text('No hay categorías disponibles', style: TextStyle(color: Colors.grey))
+            else
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: _categories.map((category) {
+                  final isSelected = _selectedCategory == category;
+                  return FilterChip(
+                    label: Text(category),
+                    selected: isSelected,
+                    onSelected: (selected) {
+                      setState(() {
+                        _selectedCategory = selected ? category : null;
+                        _selectedProduct = null;
+                        _currentPrice = 0.0;
+                      });
+                    },
+                    selectedColor: Colors.deepPurple.withOpacity(0.2),
+                    checkmarkColor: Colors.deepPurple,
+                  );
+                }).toList(),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildProductsGrid() {
+    if (_filteredProducts.isEmpty) {
+      return Card(
+        elevation: 2,
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Text(
+            'No hay productos disponibles en la categoría "${_selectedCategory ?? "todas las categorías"}"',
+            textAlign: TextAlign.center,
+            style: const TextStyle(color: Colors.grey),
+          ),
+        ),
+      );
+    }
+
+    return Card(
+      elevation: 2,
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Productos - ${_selectedCategory ?? "Todos los productos"}', style: Theme.of(context).textTheme.titleLarge),
+            const SizedBox(height: 16),
+            GridView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 2,
+                childAspectRatio: 0.8,
+                crossAxisSpacing: 12,
+                mainAxisSpacing: 12,
+              ),
+              itemCount: _filteredProducts.length,
+              itemBuilder: (context, index) {
+                final product = _filteredProducts[index];
+                final isSelected = _selectedProduct?.id == product.id;
+                
+                return Card(
+                  elevation: isSelected ? 4 : 2,
+                  color: isSelected ? Colors.deepPurple.withOpacity(0.1) : null,
+                  child: InkWell(
+                    onTap: () => _selectProduct(product),
+                    borderRadius: BorderRadius.circular(8),
+                    child: Padding(
+                      padding: const EdgeInsets.all(12),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  product.nombre,
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 14,
+                                  ),
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                                const SizedBox(height: 8),
+                                Text(
+                                  'Stock: ${product.cantidad}',
+                                  style: TextStyle(
+                                    color: product.cantidad > 0 ? Colors.green : Colors.red,
+                                    fontSize: 12,
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  'S/ ${product.precio.toStringAsFixed(2)}',
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.deepPurple,
+                                    fontSize: 16,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          if (isSelected)
+                            const Icon(
+                              Icons.check_circle,
+                              color: Colors.deepPurple,
+                              size: 20,
+                            ),
+                        ],
+                      ),
+                    ),
+                  ),
+                );
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildAddItemCard() {
+    if (_selectedProduct == null) {
+      return const SizedBox.shrink();
+    }
+
+    return Card(
+      elevation: 2,
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Añadir Producto', style: Theme.of(context).textTheme.titleLarge),
+            const SizedBox(height: 16),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.deepPurple.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.deepPurple.withOpacity(0.3)),
+              ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          _selectedProduct!.nombre,
+                          style: const TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                        Text('Stock: ${_selectedProduct!.cantidad} | S/ ${_selectedProduct!.precio.toStringAsFixed(2)}'),
+                      ],
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.close),
+                    onPressed: () {
+                      setState(() {
+                        _selectedProduct = null;
+                        _currentPrice = 0.0;
+                      });
+                    },
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
+            TextFormField(
+              controller: _quantityCtrl,
+              decoration: const InputDecoration(
+                labelText: 'Cantidad',
+                prefixIcon: Icon(Icons.confirmation_number),
+                border: OutlineInputBorder(),
+              ),
+              keyboardType: TextInputType.number,
+              validator: (value) => FormValidators.quantity(value),
+            ),
+            const SizedBox(height: 16),
+            Align(
+              alignment: Alignment.centerRight,
+              child: ElevatedButton.icon(
+                onPressed: _addItem,
+                icon: const Icon(Icons.add),
+                label: const Text('Añadir'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.deepPurple,
+                  foregroundColor: Colors.white,
                 ),
               ),
             ),
-          ),
+          ],
         ),
-          );
-        },
+      ),
+    );
+  }
+
+  Widget _buildItemsList() {
+    if (_invoiceLines.isEmpty) {
+      return const Card(
+        elevation: 2,
+        child: Padding(
+          padding: EdgeInsets.all(16),
+          child: Text('Añada productos a la factura.', textAlign: TextAlign.center),
+        ),
+      );
+    }
+    return Card(
+      elevation: 2,
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Items de la Factura', style: Theme.of(context).textTheme.titleLarge),
+            const SizedBox(height: 8),
+            ListView.separated(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: _invoiceLines.length,
+              separatorBuilder: (_, __) => const Divider(),
+              itemBuilder: (context, index) {
+                final line = _invoiceLines[index];
+                return ListTile(
+                  title: Text(line.item.description),
+                  subtitle: Text('Cantidad: ${line.invoicedQuantity} - P.U: S/ ${line.price.priceAmount.toStringAsFixed(2)}'),
+                  trailing: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text('S/ ${line.lineExtensionAmount.toStringAsFixed(2)}', style: const TextStyle(fontWeight: FontWeight.bold)),
+                      IconButton(
+                        icon: const Icon(Icons.delete, color: Colors.red),
+                        onPressed: () => setState(() => _invoiceLines.removeAt(index)),
+                      ),
+                    ],
+                  ),
+                );
+              },
+            ),
+            const Divider(thickness: 1, height: 20),
+            _buildTotalRow('SUBTOTAL', _invoiceLines.fold(0.0, (sum, item) => sum + item.lineExtensionAmount)),
+            _buildTotalRow('IGV (18%)', _invoiceLines.fold(0.0, (sum, item) => sum + item.lineExtensionAmount) * 0.18),
+            _buildTotalRow('TOTAL', _invoiceLines.fold(0.0, (sum, item) => sum + item.lineExtensionAmount) * 1.18, isTotal: true),
+          ],
+        ),
+      ),
+    );
+  }
+  
+  Widget _buildTotalRow(String label, double amount, {bool isTotal = false}) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4.0),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(label, style: TextStyle(fontWeight: isTotal ? FontWeight.bold : FontWeight.normal, fontSize: isTotal ? 16 : 14)),
+          Text('S/ ${amount.toStringAsFixed(2)}', style: TextStyle(fontWeight: isTotal ? FontWeight.bold : FontWeight.normal, fontSize: isTotal ? 16 : 14)),
+        ],
       ),
     );
   }

@@ -241,26 +241,24 @@ import '../models/sales_document.dart';
 }
 */
 
-
-
 class SalesApiService {
   static Future<List<SalesDocument>> fetchDocuments() async {
     try {
-      final snapshot = await FirebaseFirestore.instance
-          .collection('sales')
-          .orderBy('issueTime', descending: true)
-          .limit(50)
-          .get();
-
-      return snapshot.docs.map((doc) {
-        final data = doc.data();
-        return SalesDocument.fromJson({
-          ...data,
-          'documentId': data['documentId'] ?? '', // Use the documentId from the data
-        });
-      }).toList();
+      // TODO: Implementar integración con Firebase para obtener documentos
+      // Por ahora retornamos una lista vacía
+      return [];
     } catch (e) {
-      throw Exception('Failed to load sales documents: $e');
+      throw Exception('Error al obtener documentos: $e');
+    }
+  }
+
+  static Future<void> saveDocumentToFirebase(SalesDocument document) async {
+    try {
+      await FirebaseFirestore.instance
+          .collection('sales_documents')
+          .add(document.toJson());
+    } catch (e) {
+      throw Exception('Error al guardar documento en Firebase: $e');
     }
   }
 } 

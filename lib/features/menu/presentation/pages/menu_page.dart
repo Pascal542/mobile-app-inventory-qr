@@ -82,7 +82,7 @@ class _MenuButton extends StatelessWidget {
       child: InkWell(
         borderRadius: BorderRadius.circular(20),
         onTap: () {
-          // Por ahora no hace nada
+          // TODO: Implementar navegación a las secciones correspondientes
         },
         child: Container(
           padding: const EdgeInsets.all(16),

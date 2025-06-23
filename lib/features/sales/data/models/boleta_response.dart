@@ -65,4 +65,19 @@ class BoletaDocumentStatus {
       reference: json['reference'] as String?,
     );
   }
+
+  Map<String, dynamic> toJson() => {
+    'production': production,
+    'status': status,
+    'type': type,
+    'issueTime': issueTime,
+    'responseTime': responseTime,
+    'fileName': fileName,
+    'xml': xml,
+    'cdr': cdr,
+    'faults': faults,
+    'notes': notes,
+    'personaId': personaId,
+    'reference': reference,
+  };
 } 

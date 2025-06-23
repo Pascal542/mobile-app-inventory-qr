@@ -1,8 +1,21 @@
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import 'package:mobile_app_inventory_qr/core/data/auth_service.dart';
-import '../../../../core/data/sql.dart';
+import '../bloc/auth_bloc.dart';
+import '../../../../core/validation/form_validators.dart';
+import '../../../../core/widgets/app_snackbar.dart';
+
+/// Excepciones personalizadas para autenticación
+class AuthException implements Exception {
+  final String message;
+  final String? code;
+  final dynamic originalError;
+
+  AuthException(this.message, {this.code, this.originalError});
+
+  @override
+  String toString() => 'AuthException: $message';
+}
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -16,8 +29,7 @@ class _LoginScreenState extends State<LoginScreen> {
   final _emailCtrl = TextEditingController();
   final _passwordCtrl = TextEditingController();
   bool isVisible = false;
-  bool isLoginTrue = false;
-  final db = DatabaseHelper();
+  bool _isLoading = false;
 
   @override
   void dispose() {
@@ -26,118 +38,148 @@ class _LoginScreenState extends State<LoginScreen> {
     super.dispose();
   }
 
-  void _login() async {
-  if (_formKey.currentState!.validate()) {
-    try {
-      await authService.value.signIn(
+  void _handleLogin() {
+    if (!_formKey.currentState!.validate()) return;
+
+    setState(() => _isLoading = true);
+
+    context.read<AuthBloc>().add(
+      AuthSignInRequested(
         email: _emailCtrl.text.trim(),
-        password: _passwordCtrl.text.trim(),
-      );
-      if (!mounted) return;
-      context.go('/home');
-    } on FirebaseAuthException catch (e) {
-      String errorMessage;
-      switch (e.code) {
-        case 'user-not-found':
-          errorMessage = 'Usuario no registrado.';
-          break;
-        case 'wrong-password':
-          errorMessage = 'Contraseña incorrecta.';
-          break;
-        case 'invalid-email':
-          errorMessage = 'Correo inválido.';
-          break;
-        default:
-          errorMessage = 'Error: ${e.message}';
-      }
-
-      if (mounted) {
-        setState(() {
-          isLoginTrue = true;
-        });
-
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(errorMessage),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    }
-  }
-}
-
-  void _navigateToHome() {
-    context.go('/home');
+        password: _passwordCtrl.text,
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: SafeArea(
-        child: Center(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(16),
-            child: Card(
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Form(
-                  key: _formKey,
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Image.asset(
-                        "lib/assets/login.png",
-                        width: 100,
-                      ),
-                      const SizedBox(height: 24),
-                      Text(
-                        'Iniciar Sesión',
-                        style: Theme.of(context).textTheme.titleLarge,
-                      ),
-                      const SizedBox(height: 24),
-                      TextFormField(
-                        controller: _emailCtrl,
-                        decoration: const InputDecoration(
-                          labelText: 'Correo',
-                          prefixIcon: Icon(Icons.email),
+      appBar: AppBar(
+        title: const Text('Iniciar Sesión'),
+        backgroundColor: Colors.deepPurple,
+        foregroundColor: Colors.white,
+      ),
+      body: BlocListener<AuthBloc, AuthState>(
+        listener: (context, state) {
+          if (state is Authenticated) {
+            AppSnackbar.success(context, '✅ Bienvenido, ${state.user.displayName ?? state.user.email}');
+            context.go('/home');
+          } else if (state is AuthError) {
+            AppSnackbar.error(context, '❌ ${state.message}');
+          }
+        },
+        child: SafeArea(
+          child: Center(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(16),
+              child: Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Form(
+                    key: _formKey,
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Image.asset(
+                          "lib/assets/login.png",
+                          width: 100,
                         ),
-                        keyboardType: TextInputType.emailAddress,
-                        validator: (v) =>
-                            v == null || v.isEmpty ? 'Obligatorio' : null,
-                      ),
-                      const SizedBox(height: 16),
-                      TextFormField(
-                        controller: _passwordCtrl,
-                        decoration: const InputDecoration(
-                          labelText: 'Contraseña',
-                          prefixIcon: Icon(Icons.lock),
+                        const SizedBox(height: 24),
+                        Text(
+                          'Iniciar Sesión',
+                          style: Theme.of(context).textTheme.titleLarge,
                         ),
-                        obscureText: !isVisible,
-                        validator: (v) =>
-                            v == null || v.isEmpty ? 'Obligatorio' : null,
-                      ),
-                      const SizedBox(height: 24),
-                      ElevatedButton(
-                        onPressed: _login,
-                        child: const Text('Ingresar'),
-                      ),
-                      const SizedBox(height: 16),
-                      TextButton(
-                        onPressed: () => context.push('/signup'),
-                        child: const Text('¿No tienes cuenta? Regístrate'),
-                      ),
-                      const SizedBox(height: 8),
-                      TextButton(
-                        onPressed: _navigateToHome,
-                        child: const Text('Ir al Home'),
-                      ),
-                      if (isLoginTrue)
-                        const Text(
-                          "Correo o contraseña incorrecta",
-                          style: TextStyle(color: Colors.red),
+                        const SizedBox(height: 24),
+                        BlocBuilder<AuthBloc, AuthState>(
+                          builder: (context, state) {
+                            return TextFormField(
+                              controller: _emailCtrl,
+                              decoration: const InputDecoration(
+                                labelText: 'Correo',
+                                prefixIcon: Icon(Icons.email),
+                                hintText: 'ejemplo@correo.com',
+                              ),
+                              keyboardType: TextInputType.emailAddress,
+                              textCapitalization: TextCapitalization.none,
+                              validator: FormValidators.email,
+                              enabled: state is! AuthLoading,
+                              onFieldSubmitted: (_) => _handleLogin(),
+                            );
+                          },
                         ),
-                    ],
+                        const SizedBox(height: 16),
+                        BlocBuilder<AuthBloc, AuthState>(
+                          builder: (context, state) {
+                            return TextFormField(
+                              controller: _passwordCtrl,
+                              decoration: InputDecoration(
+                                labelText: 'Contraseña',
+                                prefixIcon: const Icon(Icons.lock),
+                                suffixIcon: IconButton(
+                                  icon: Icon(isVisible ? Icons.visibility : Icons.visibility_off),
+                                  onPressed: () {
+                                    setState(() {
+                                      isVisible = !isVisible;
+                                    });
+                                  },
+                                ),
+                              ),
+                              obscureText: !isVisible,
+                              textCapitalization: TextCapitalization.none,
+                              validator: FormValidators.password,
+                              enabled: state is! AuthLoading,
+                              onFieldSubmitted: (_) => _handleLogin(),
+                            );
+                          },
+                        ),
+                        const SizedBox(height: 16),
+                        Align(
+                          alignment: Alignment.centerRight,
+                          child: TextButton(
+                            onPressed: () => context.go('/forgot_password'),
+                            child: const Text('¿Olvidaste tu contraseña?'),
+                          ),
+                        ),
+                        const SizedBox(height: 24),
+                        BlocBuilder<AuthBloc, AuthState>(
+                          builder: (context, state) {
+                            return SizedBox(
+                              width: double.infinity,
+                              child: ElevatedButton(
+                                onPressed: state is AuthLoading ? null : _handleLogin,
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.deepPurple,
+                                  foregroundColor: Colors.white,
+                                  padding: const EdgeInsets.symmetric(vertical: 16),
+                                ),
+                                child: state is AuthLoading
+                                    ? const SizedBox(
+                                        height: 20,
+                                        width: 20,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                          valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                        ),
+                                      )
+                                    : const Text(
+                                        'Iniciar Sesión',
+                                        style: TextStyle(fontSize: 16),
+                                      ),
+                              ),
+                            );
+                          },
+                        ),
+                        const SizedBox(height: 16),
+                        BlocBuilder<AuthBloc, AuthState>(
+                          builder: (context, state) {
+                            return TextButton(
+                              onPressed: state is AuthLoading ? null : () => context.go('/signup'),
+                              child: const Text('¿No tienes cuenta? Regístrate'),
+                            );
+                          },
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ),

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:intl/intl.dart';
+import 'package:go_router/go_router.dart';
 
 class Pago {
   final String cliente;
@@ -130,7 +131,15 @@ class _ReportePagosState extends State<ReportePagos> {
     final formatoFecha = DateFormat('dd MMM yyyy');
 
     return Scaffold(
-      appBar: AppBar(title: const Text('💰 Reporte de Pagos')),
+      appBar: AppBar(
+        title: const Text('💰 Reporte de Pagos'),
+        backgroundColor: Colors.deepPurple,
+        foregroundColor: Colors.white,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => context.go('/reports'),
+        ),
+      ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: ListView(
@@ -184,9 +193,8 @@ class IngresosGrafico extends StatelessWidget {
       BarChartData(
         alignment: BarChartAlignment.spaceAround,
         maxY: datos
-                .map((e) => e['ingreso'] as num)
-                .reduce((a, b) => a > b ? a : b)
-                .toDouble() +
+                .map((e) => (e['ingreso'] as num?)?.toDouble() ?? 0.0)
+                .reduce((a, b) => a > b ? a : b) +
             500,
         titlesData: FlTitlesData(
           leftTitles: AxisTitles(
@@ -233,7 +241,7 @@ class IngresosGrafico extends StatelessWidget {
             x: i,
             barRods: [
               BarChartRodData(
-                toY: (item['ingreso'] as num).toDouble(),
+                toY: (item['ingreso'] as num?)?.toDouble() ?? 0.0,
                 color: Colors.green,
                 width: 16,
                 borderRadius: BorderRadius.circular(4),
