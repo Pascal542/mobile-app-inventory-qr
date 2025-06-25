@@ -14,7 +14,7 @@ dependencies:
   pdf: ^3.10.7
   printing: ^5.11.1
   fl_chart: ^0.64.0
-  intl: ^0.19.0
+  intl: 0.20.2
   sqflite: ^2.4.2
   path: ^1.9.1
   path_provider: ^2.1.2
@@ -39,6 +39,7 @@ dependencies:
   firebase_storage: ^12.4.7
   open_file: ^3.5.10
   url_launcher: ^6.3.1
+  webview_flutter: ^4.7.0
 
 
   # The following adds the Cupertino Icons font to your application.
@@ -61,7 +62,10 @@ flutter:
 
 # Evitar errores en macOS por open_file
 platforms:
+  android:
+  ios:
+  web:
+  windows:
+  linux:
   macos:
-    plugin:
-      implements: none
 

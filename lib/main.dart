@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:go_router/go_router.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 // Firebase configuration
 import 'core/config/firebase_config.dart';
@@ -20,6 +20,7 @@ import 'package:mobile_app_inventory_qr/features/auth/presentation/pages/signup_
 import 'package:mobile_app_inventory_qr/features/auth/presentation/pages/forgot_password_page.dart';
 import 'package:mobile_app_inventory_qr/features/auth/presentation/pages/user_details_form.dart';
 import 'package:mobile_app_inventory_qr/features/auth/presentation/bloc/auth_bloc.dart';
+import 'package:mobile_app_inventory_qr/features/auth/presentation/pages/referral_page.dart';
 
 // Inventory features
 import 'package:mobile_app_inventory_qr/features/inventory/presentation/pages/agregar_producto_page.dart';
@@ -35,6 +36,7 @@ import 'package:mobile_app_inventory_qr/features/sales/presentation/pages/boleta
 import 'package:mobile_app_inventory_qr/features/sales/presentation/pages/boleta_form_page.dart';
 import 'package:mobile_app_inventory_qr/features/sales/presentation/pages/factura_form_page.dart';
 import 'package:mobile_app_inventory_qr/features/sales/presentation/pages/sales_list_page.dart';
+import 'package:mobile_app_inventory_qr/features/sales/presentation/pages/feedback_webview_page.dart';
 import 'package:mobile_app_inventory_qr/features/sales/presentation/providers/sales_providers.dart';
 
 // QR features
@@ -47,6 +49,20 @@ import 'package:mobile_app_inventory_qr/features/reports/data/inventario.dart';
 import 'package:mobile_app_inventory_qr/features/reports/data/pagos.dart';
 import 'package:mobile_app_inventory_qr/features/reports/data/generar_pdf.dart';
 import 'package:mobile_app_inventory_qr/features/inventory/presentation/bloc/inventory_bloc.dart';
+import 'package:mobile_app_inventory_qr/features/reports/presentation/providers/reports_providers.dart';
+
+Future<void> actualizarReferidosParaUsuariosAntiguos() async {
+  final users = await FirebaseFirestore.instance.collection('users').get();
+  for (final doc in users.docs) {
+    final data = doc.data();
+    if (!data.containsKey('referralCode')) {
+      await doc.reference.update({
+        'referralCode': doc.id.substring(0, 8),
+        'referralCount': 0,
+      });
+    }
+  }
+}
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -79,6 +95,8 @@ void main() async {
     AppLogger.error("Error initializing Firebase", e);
     // Continue app execution even if Firebase fails
   }
+  
+  await actualizarReferidosParaUsuariosAntiguos();
   
   runApp(const MyApp());
 }
@@ -187,6 +205,14 @@ final _router = GoRouter(
       path: '/reporte_pdf', 
       builder: (context, state) => const GenerarPDF()
     ),
+    GoRoute(
+      path: '/referidos',
+      builder: (context, state) => const ReferralPage(),
+    ),
+    GoRoute(
+      path: '/feedback',
+      builder: (context, state) => const FeedbackWebViewPage(),
+    ),
   ],
 );
 
@@ -203,6 +229,8 @@ class MyApp extends StatelessWidget {
         ),
         // Sales providers
         ...SalesProviders.providers,
+        // Reports providers
+        ...ReportsProviders.providers,
       ],
       child: MaterialApp.router(
         title: 'Vendify',
@@ -243,7 +271,7 @@ class MyApp extends StatelessWidget {
               ),
             ),
           ),
-          cardTheme: CardTheme(
+          cardTheme: CardThemeData(
             elevation: 4,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(12),

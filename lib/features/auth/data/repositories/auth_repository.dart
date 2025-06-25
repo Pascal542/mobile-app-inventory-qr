@@ -29,6 +29,9 @@ class AuthRepository {
       
       try {
         // Obtener datos adicionales de Firestore
+        print('[DEBUG] Buscando usuario en Firestore:');
+        print('[DEBUG] Colección: users');
+        print('[DEBUG] UID: \'${firebaseUser.uid}\'');
         final doc = await _firestore.collection('users').doc(firebaseUser.uid).get();
         if (doc.exists) {
           return UserModel.fromFirestore(doc);
@@ -144,6 +147,9 @@ class AuthRepository {
         'businessEmail': email,
       };
 
+      // Generar código de referido único
+      final referralCode = user.uid.substring(0, 8);
+
       // Crear usuario completo
       final userModel = UserModel(
         uid: user.uid,
@@ -161,12 +167,17 @@ class AuthRepository {
         preferences: preferences,
         deviceInfo: deviceInfo['platform']?.toString(),
         appVersion: deviceInfo['appVersion']?.toString(),
+        referralCode: referralCode,
+        referralCount: 0,
       );
 
       // Crear ID del documento con formato OwnerName_UID
       final documentId = '${displayName?.replaceAll(' ', '_') ?? 'User'}_${user.uid}';
 
       // Guardar en Firestore con información esencial
+      print('[DEBUG] Guardando usuario en Firestore:');
+      print('[DEBUG] Colección: users');
+      print('[DEBUG] documentId: \'${documentId}\'');
       await _firestore.collection('users').doc(documentId).set(userModel.toFirestore());
 
       // Crear subcolección para historial de sesiones (solo información básica)
@@ -426,6 +437,24 @@ class AuthRepository {
         return AuthException('El registro está deshabilitado.', code: e.code);
       default:
         return AuthException('Error de autenticación: ${e.message}', code: e.code);
+    }
+  }
+
+  /// Buscar usuario por código de referido
+  Future<UserModel?> getUserByReferralCode(String code) async {
+    final query = await _firestore.collection('users').where('referralCode', isEqualTo: code).limit(1).get();
+    if (query.docs.isNotEmpty) {
+      return UserModel.fromFirestore(query.docs.first);
+    }
+    return null;
+  }
+
+  /// Sumar uno al referralCount de un usuario por código
+  Future<void> incrementReferralCount(String code) async {
+    final user = await getUserByReferralCode(code);
+    if (user != null) {
+      final docRef = _firestore.collection('users').doc(user.uid);
+      await docRef.update({'referralCount': FieldValue.increment(1)});
     }
   }
 } 

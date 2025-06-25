@@ -17,6 +17,8 @@ class UserModel {
   final Map<String, dynamic> preferences;
   final String? deviceInfo;
   final String? appVersion;
+  final String? referralCode;
+  final int referralCount;
 
   const UserModel({
     required this.uid,
@@ -34,6 +36,8 @@ class UserModel {
     this.preferences = const {},
     this.deviceInfo,
     this.appVersion,
+    this.referralCode,
+    this.referralCount = 0,
   });
 
   /// Crear usuario desde Firebase Auth User
@@ -52,7 +56,7 @@ class UserModel {
 
   /// Crear usuario desde Firestore document
   factory UserModel.fromFirestore(DocumentSnapshot doc) {
-    final data = doc.data() as Map<String, dynamic>;
+    final data = doc.data() as Map<String, dynamic>? ?? {};
     return UserModel(
       uid: doc.id,
       email: data['email'] ?? '',
@@ -69,6 +73,8 @@ class UserModel {
       preferences: data['preferences'] ?? {},
       deviceInfo: data['deviceInfo'],
       appVersion: data['appVersion'],
+      referralCode: data['referralCode'] as String?,
+      referralCount: (data['referralCount'] as num?)?.toInt() ?? 0,
     );
   }
 
@@ -90,6 +96,8 @@ class UserModel {
       'preferences': preferences,
       'deviceInfo': deviceInfo,
       'appVersion': appVersion,
+      'referralCode': referralCode,
+      'referralCount': referralCount,
       'updatedAt': Timestamp.fromDate(DateTime.now()),
     };
   }
@@ -111,6 +119,8 @@ class UserModel {
     Map<String, dynamic>? preferences,
     String? deviceInfo,
     String? appVersion,
+    String? referralCode,
+    int? referralCount,
   }) {
     return UserModel(
       uid: uid ?? this.uid,
@@ -128,6 +138,8 @@ class UserModel {
       preferences: preferences ?? this.preferences,
       deviceInfo: deviceInfo ?? this.deviceInfo,
       appVersion: appVersion ?? this.appVersion,
+      referralCode: referralCode ?? this.referralCode,
+      referralCount: referralCount ?? this.referralCount,
     );
   }
 

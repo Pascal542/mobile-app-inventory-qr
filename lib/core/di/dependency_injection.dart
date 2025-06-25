@@ -20,6 +20,8 @@ import '../../features/qr/domain/usecases/delete_qr_usecase.dart';
 import '../../features/qr/domain/usecases/get_qr_image_url_usecase.dart';
 import '../../features/qr/domain/usecases/upload_qr_usecase.dart';
 import '../../features/qr/presentation/bloc/qr_bloc.dart';
+import '../../features/reports/services/reports_service.dart';
+import '../../features/reports/presentation/bloc/reports_bloc.dart';
 
 /// Contenedor global de dependencias usando GetIt
 final GetIt getIt = GetIt.instance;
@@ -51,6 +53,9 @@ class DependencyInjection {
     
     // Firestore service
     getIt.registerLazySingleton<FirestoreService>(() => FirestoreService());
+    
+    // Reports service
+    getIt.registerLazySingleton<ReportsService>(() => ReportsService());
   }
 
   /// Inicializar data sources
@@ -147,6 +152,12 @@ class DependencyInjection {
           uploadQrUseCase: getIt<UploadQrUseCase>(),
           deleteQrUseCase: getIt<DeleteQrUseCase>(),
         ));
+    
+    // Reports BLoC
+    getIt.registerFactory<ReportsBloc>(() => ReportsBloc(
+      reportsService: getIt<ReportsService>(),
+      authBloc: getIt<AuthBloc>(),
+    ));
   }
 
   /// Limpiar todas las dependencias (útil para testing)

@@ -95,6 +95,15 @@ class AuthUpdatePreferencesRequested extends AuthEvent {
   List<Object?> get props => [uid, preferences];
 }
 
+// Evento para usar un código de referido
+class UseReferralCodeRequested extends AuthEvent {
+  final String code;
+  UseReferralCodeRequested(this.code);
+
+  @override
+  List<Object?> get props => [code];
+}
+
 // States
 abstract class AuthState extends Equatable {
   const AuthState();
@@ -147,6 +156,16 @@ class PasswordResetSent extends AuthState {
   List<Object?> get props => [email];
 }
 
+// Estado para mostrar el código de referido
+class ReferralCodeLoaded extends AuthState {
+  final String referralCode;
+  final int referralCount;
+  ReferralCodeLoaded(this.referralCode, this.referralCount);
+
+  @override
+  List<Object?> get props => [referralCode, referralCount];
+}
+
 /// BLoC que maneja toda la lógica de autenticación
 class AuthBloc extends Bloc<AuthEvent, AuthState> {
   final AuthRepository _authRepository;
@@ -162,6 +181,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     on<AuthUpdateBusinessInfoRequested>(_onAuthUpdateBusinessInfoRequested);
     on<AuthUpdateProfileInfoRequested>(_onAuthUpdateProfileInfoRequested);
     on<AuthUpdatePreferencesRequested>(_onAuthUpdatePreferencesRequested);
+    on<UseReferralCodeRequested>(_onUseReferralCodeRequested);
   }
 
   /// Verificar estado de autenticación
@@ -345,6 +365,19 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       } else {
         emit(AuthError('Error inesperado: $e'));
       }
+    }
+  }
+
+  /// Usar un código de referido
+  Future<void> _onUseReferralCodeRequested(
+    UseReferralCodeRequested event,
+    Emitter<AuthState> emit,
+  ) async {
+    try {
+      await _authRepository.incrementReferralCount(event.code);
+      emit(AuthSuccess('¡Código de referido usado correctamente!'));
+    } catch (e) {
+      emit(AuthError('Error usando el código de referido: $e'));
     }
   }
 } 
