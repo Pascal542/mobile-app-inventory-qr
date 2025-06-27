@@ -45,13 +45,13 @@ class _SignupPageState extends State<SignupPage> {
     };
 
     context.read<AuthBloc>().add(
-      AuthSignUpRequested(
-        email: _emailController.text.trim(),
-        password: _passwordController.text,
-        displayName: _nameController.text.trim(),
-        additionalInfo: additionalInfo,
-      ),
-    );
+          AuthSignUpRequested(
+            email: _emailController.text.trim(),
+            password: _passwordController.text,
+            displayName: _nameController.text.trim(),
+            additionalInfo: additionalInfo,
+          ),
+        );
   }
 
   @override
@@ -68,7 +68,11 @@ class _SignupPageState extends State<SignupPage> {
       ),
       body: BlocListener<AuthBloc, AuthState>(
         listener: (context, state) {
-          if (state is AuthSuccess) {
+          if (state is Authenticated) {
+            setState(() => _isLoading = false);
+            AppSnackbar.success(context, '✅ Usuario registrado exitosamente');
+            context.go('/home');
+          } else if (state is AuthSuccess) {
             setState(() => _isLoading = false);
             AppSnackbar.success(context, state.message);
             context.go('/home');
@@ -133,7 +137,9 @@ class _SignupPageState extends State<SignupPage> {
                     prefixIcon: const Icon(Icons.lock),
                     suffixIcon: IconButton(
                       icon: Icon(
-                        _isPasswordVisible ? Icons.visibility : Icons.visibility_off,
+                        _isPasswordVisible
+                            ? Icons.visibility
+                            : Icons.visibility_off,
                       ),
                       onPressed: () {
                         setState(() {
@@ -154,11 +160,14 @@ class _SignupPageState extends State<SignupPage> {
                     prefixIcon: const Icon(Icons.lock),
                     suffixIcon: IconButton(
                       icon: Icon(
-                        _isConfirmPasswordVisible ? Icons.visibility : Icons.visibility_off,
+                        _isConfirmPasswordVisible
+                            ? Icons.visibility
+                            : Icons.visibility_off,
                       ),
                       onPressed: () {
                         setState(() {
-                          _isConfirmPasswordVisible = !_isConfirmPasswordVisible;
+                          _isConfirmPasswordVisible =
+                              !_isConfirmPasswordVisible;
                         });
                       },
                     ),
@@ -192,7 +201,8 @@ class _SignupPageState extends State<SignupPage> {
                           width: 20,
                           child: CircularProgressIndicator(
                             strokeWidth: 2,
-                            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                            valueColor:
+                                AlwaysStoppedAnimation<Color>(Colors.white),
                           ),
                         )
                       : const Text(
@@ -218,4 +228,4 @@ class _SignupPageState extends State<SignupPage> {
       ),
     );
   }
-} 
+}

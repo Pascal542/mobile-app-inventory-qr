@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../bloc/auth_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -19,6 +20,22 @@ class _ReferralPageState extends State<ReferralPage> {
     super.dispose();
   }
 
+  /// Copiar código de referido al portapapeles
+  void _copyReferralCodeToClipboard(String referralCode) {
+    Clipboard.setData(ClipboardData(text: referralCode));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: const Text('Código de referido copiado al portapapeles'),
+        backgroundColor: Colors.green.shade600,
+        duration: const Duration(seconds: 2),
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(10),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -35,46 +52,108 @@ class _ReferralPageState extends State<ReferralPage> {
         listener: (context, state) {
           if (state is AuthSuccess) {
             ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text(state.message ?? 'Éxito')),
+              SnackBar(
+                content: Text(state.message ?? 'Éxito'),
+                backgroundColor: Colors.green.shade600,
+                duration: const Duration(seconds: 3),
+                behavior: SnackBarBehavior.floating,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
             );
+
+            // Si el estado incluye un usuario actualizado, actualizar el BLoC
+            if (state.user != null) {
+              context.read<AuthBloc>().emit(Authenticated(state.user!));
+            }
           } else if (state is AuthError) {
             ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text(state.message ?? 'Error'), backgroundColor: Colors.red),
+              SnackBar(
+                content: Text(state.message ?? 'Error'),
+                backgroundColor: Colors.red.shade600,
+                duration: const Duration(seconds: 3),
+                behavior: SnackBarBehavior.floating,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
             );
           }
         },
         builder: (context, state) {
-          final authState = context.read<AuthBloc>().state;
           String? referralCode;
           int referralCount = 0;
-          if (authState is Authenticated) {
-            referralCode = authState.user.referralCode;
-            referralCount = authState.user.referralCount;
+          if (state is Authenticated) {
+            referralCode = state.user.referralCode;
+            referralCount = state.user.referralCount;
+          } else if (state is AuthSuccess && state.user != null) {
+            referralCode = state.user!.referralCode;
+            referralCount = state.user!.referralCount;
           }
           return Padding(
             padding: const EdgeInsets.all(24.0),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                const Text('Tu código de referido:', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                const Text('Tu código de referido:',
+                    style:
+                        TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                 const SizedBox(height: 8),
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: Colors.teal.shade50,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Center(
-                    child: Text(
-                      referralCode ?? '-',
-                      style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold, letterSpacing: 2),
+                GestureDetector(
+                  onTap: () {
+                    if (referralCode != null && referralCode.isNotEmpty) {
+                      _copyReferralCodeToClipboard(referralCode);
+                    }
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.teal.shade50,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.teal.shade200, width: 1),
+                    ),
+                    child: Column(
+                      children: [
+                        Center(
+                          child: Text(
+                            referralCode ?? '-',
+                            style: const TextStyle(
+                                fontSize: 20,
+                                fontWeight: FontWeight.bold,
+                                letterSpacing: 1),
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.copy,
+                              size: 16,
+                              color: Colors.teal.shade600,
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              'Toca para copiar',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.teal.shade600,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
                     ),
                   ),
                 ),
                 const SizedBox(height: 8),
-                Text('Referidos conseguidos: $referralCount', style: const TextStyle(fontSize: 16)),
+                Text('Referidos conseguidos: $referralCount',
+                    style: const TextStyle(fontSize: 16)),
                 const SizedBox(height: 32),
-                const Text('¿Tienes un código de otro usuario?', style: TextStyle(fontSize: 16)),
+                const Text('¿Tienes un código de otro usuario?',
+                    style: TextStyle(fontSize: 16)),
                 const SizedBox(height: 8),
                 TextField(
                   controller: _referralInputCtrl,
@@ -88,7 +167,9 @@ class _ReferralPageState extends State<ReferralPage> {
                   onPressed: () {
                     final code = _referralInputCtrl.text.trim();
                     if (code.isNotEmpty) {
-                      context.read<AuthBloc>().add(UseReferralCodeRequested(code));
+                      context
+                          .read<AuthBloc>()
+                          .add(UseReferralCodeRequested(code));
                     }
                   },
                   style: ElevatedButton.styleFrom(
@@ -105,4 +186,4 @@ class _ReferralPageState extends State<ReferralPage> {
       ),
     );
   }
-} 
+}

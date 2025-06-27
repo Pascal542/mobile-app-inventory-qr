@@ -19,6 +19,7 @@ class UserModel {
   final String? appVersion;
   final String? referralCode;
   final int referralCount;
+  final String? usedReferralCode;
 
   const UserModel({
     required this.uid,
@@ -38,6 +39,7 @@ class UserModel {
     this.appVersion,
     this.referralCode,
     this.referralCount = 0,
+    this.usedReferralCode,
   });
 
   /// Crear usuario desde Firebase Auth User
@@ -51,14 +53,20 @@ class UserModel {
       emailVerified: firebaseUser.emailVerified,
       createdAt: DateTime.now(),
       lastLoginAt: DateTime.now(),
+      usedReferralCode: null,
     );
   }
 
   /// Crear usuario desde Firestore document
   factory UserModel.fromFirestore(DocumentSnapshot doc) {
     final data = doc.data() as Map<String, dynamic>? ?? {};
+    // LOG: Mostrar datos crudos y campos críticos
+    print('[UserModel.fromFirestore] doc.id: \'${doc.id}\'');
+    print('[UserModel.fromFirestore] data: \'${data}\'');
+    print('[UserModel.fromFirestore] email: \'${data['email']}\'');
+    print('[UserModel.fromFirestore] uid: \'${data['uid']}\'');
     return UserModel(
-      uid: doc.id,
+      uid: data['uid'] ?? doc.id,
       email: data['email'] ?? '',
       displayName: data['displayName'],
       photoURL: data['photoURL'],
@@ -75,6 +83,7 @@ class UserModel {
       appVersion: data['appVersion'],
       referralCode: data['referralCode'] as String?,
       referralCount: (data['referralCount'] as num?)?.toInt() ?? 0,
+      usedReferralCode: data['usedReferralCode'] as String?,
     );
   }
 
@@ -98,6 +107,7 @@ class UserModel {
       'appVersion': appVersion,
       'referralCode': referralCode,
       'referralCount': referralCount,
+      'usedReferralCode': usedReferralCode,
       'updatedAt': Timestamp.fromDate(DateTime.now()),
     };
   }
@@ -121,6 +131,7 @@ class UserModel {
     String? appVersion,
     String? referralCode,
     int? referralCount,
+    String? usedReferralCode,
   }) {
     return UserModel(
       uid: uid ?? this.uid,
@@ -140,6 +151,7 @@ class UserModel {
       appVersion: appVersion ?? this.appVersion,
       referralCode: referralCode ?? this.referralCode,
       referralCount: referralCount ?? this.referralCount,
+      usedReferralCode: usedReferralCode ?? this.usedReferralCode,
     );
   }
 
@@ -181,4 +193,4 @@ class UserModel {
 
   @override
   int get hashCode => uid.hashCode;
-} 
+}

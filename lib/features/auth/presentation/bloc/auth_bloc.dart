@@ -95,11 +95,9 @@ class AuthUpdatePreferencesRequested extends AuthEvent {
   List<Object?> get props => [uid, preferences];
 }
 
-// Evento para usar un código de referido
 class UseReferralCodeRequested extends AuthEvent {
   final String code;
   UseReferralCodeRequested(this.code);
-
   @override
   List<Object?> get props => [code];
 }
@@ -156,16 +154,6 @@ class PasswordResetSent extends AuthState {
   List<Object?> get props => [email];
 }
 
-// Estado para mostrar el código de referido
-class ReferralCodeLoaded extends AuthState {
-  final String referralCode;
-  final int referralCount;
-  ReferralCodeLoaded(this.referralCode, this.referralCount);
-
-  @override
-  List<Object?> get props => [referralCode, referralCount];
-}
-
 /// BLoC que maneja toda la lógica de autenticación
 class AuthBloc extends Bloc<AuthEvent, AuthState> {
   final AuthRepository _authRepository;
@@ -191,7 +179,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   ) async {
     try {
       emit(AuthLoading());
-      
+
       final user = _authRepository.currentUser;
       if (user != null) {
         emit(Authenticated(user));
@@ -211,12 +199,12 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   ) async {
     try {
       emit(AuthLoading());
-      
+
       final user = await _authRepository.signInWithEmailAndPassword(
         email: event.email,
         password: event.password,
       );
-      
+
       emit(Authenticated(user));
     } catch (e) {
       AppLogger.error("Error en login", e);
@@ -234,17 +222,23 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     Emitter<AuthState> emit,
   ) async {
     try {
+      print('[DEBUG] BLoC: Iniciando registro para ${event.email}');
       emit(AuthLoading());
-      
+
+      print('[DEBUG] BLoC: Llamando al repositorio');
       final user = await _authRepository.signUpWithEmailAndPassword(
         email: event.email,
         password: event.password,
         displayName: event.displayName,
         additionalInfo: event.additionalInfo,
       );
-      
+      print('[DEBUG] BLoC: Usuario registrado exitosamente');
+
+      print('[DEBUG] BLoC: Emitiendo Authenticated');
       emit(Authenticated(user));
+      print('[DEBUG] BLoC: Estado Authenticated emitido');
     } catch (e) {
+      print('[DEBUG] BLoC: Error en registro: $e');
       AppLogger.error("Error en registro", e);
       if (e is AuthException) {
         emit(AuthError(e.message, code: e.code));
@@ -261,9 +255,9 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   ) async {
     try {
       emit(AuthLoading());
-      
+
       await _authRepository.signOut();
-      
+
       emit(Unauthenticated());
     } catch (e) {
       AppLogger.error("Error al cerrar sesión", e);
@@ -277,12 +271,13 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     Emitter<AuthState> emit,
   ) async {
     try {
-      print("DEBUG: BLoC recibió solicitud de recuperación para: ${event.email}");
+      print(
+          "DEBUG: BLoC recibió solicitud de recuperación para: ${event.email}");
       emit(AuthLoading());
-      
+
       print("DEBUG: Llamando al repositorio para enviar email...");
       await _authRepository.sendPasswordResetEmail(event.email);
-      
+
       print("DEBUG: Email enviado exitosamente, emitiendo AuthSuccess");
       emit(AuthSuccess('Email de recuperación enviado exitosamente'));
     } catch (e) {
@@ -303,12 +298,12 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   ) async {
     try {
       emit(AuthLoading());
-      
+
       await _authRepository.updateBusinessInfo(
         uid: event.uid,
         businessInfo: event.businessInfo,
       );
-      
+
       emit(AuthSuccess('Información del negocio actualizada exitosamente'));
     } catch (e) {
       AppLogger.error("Error actualizando información del negocio", e);
@@ -327,12 +322,12 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   ) async {
     try {
       emit(AuthLoading());
-      
+
       await _authRepository.updateProfileInfo(
         uid: event.uid,
         profileInfo: event.profileInfo,
       );
-      
+
       emit(AuthSuccess('Perfil actualizado exitosamente'));
     } catch (e) {
       AppLogger.error("Error actualizando perfil", e);
@@ -351,12 +346,12 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   ) async {
     try {
       emit(AuthLoading());
-      
+
       await _authRepository.updatePreferences(
         uid: event.uid,
         preferences: event.preferences,
       );
-      
+
       emit(AuthSuccess('Preferencias actualizadas exitosamente'));
     } catch (e) {
       AppLogger.error("Error actualizando preferencias", e);
@@ -368,16 +363,41 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     }
   }
 
-  /// Usar un código de referido
   Future<void> _onUseReferralCodeRequested(
     UseReferralCodeRequested event,
     Emitter<AuthState> emit,
   ) async {
     try {
-      await _authRepository.incrementReferralCount(event.code);
-      emit(AuthSuccess('¡Código de referido usado correctamente!'));
+      print('[DEBUG] BLoC: Iniciando uso de código de referido: ${event.code}');
+      final currentUser = _authRepository.currentUser;
+      if (currentUser == null) {
+        print('[DEBUG] BLoC: Error - Usuario no autenticado');
+        emit(AuthError('Usuario no autenticado'));
+        return;
+      }
+      print('[DEBUG] BLoC: Usuario actual: ${currentUser.email}');
+
+      print('[DEBUG] BLoC: Llamando al repositorio para usar código');
+      await _authRepository.useReferralCode(
+          currentUser: currentUser, code: event.code.trim());
+      print('[DEBUG] BLoC: Código usado exitosamente');
+
+      // Refrescar datos del usuario solo si fue exitoso
+      print('[DEBUG] BLoC: Refrescando datos del usuario');
+      final updatedUser = await _authRepository.refreshCurrentUserData();
+      print('[DEBUG] BLoC: Datos del usuario refrescados');
+
+      emit(AuthSuccess('¡Código de referido usado correctamente!',
+          user: updatedUser));
+      print('[DEBUG] BLoC: Estado AuthSuccess emitido');
     } catch (e) {
-      emit(AuthError('Error usando el código de referido: $e'));
+      print('[DEBUG] BLoC: Error usando código de referido: $e');
+      AppLogger.error("Error usando código de referido", e);
+      if (e is AuthException) {
+        emit(AuthError(e.message, code: e.code));
+      } else {
+        emit(AuthError('Error usando el código de referido: $e'));
+      }
     }
   }
-} 
+}

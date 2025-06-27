@@ -26,21 +26,35 @@ class AuthRepository {
   Stream<UserModel?> get authStateChanges {
     return _auth.authStateChanges().asyncMap((firebaseUser) async {
       if (firebaseUser == null) return null;
-      
       try {
-        // Obtener datos adicionales de Firestore
-        print('[DEBUG] Buscando usuario en Firestore:');
-        print('[DEBUG] Colección: users');
-        print('[DEBUG] UID: \'${firebaseUser.uid}\'');
-        final doc = await _firestore.collection('users').doc(firebaseUser.uid).get();
-        if (doc.exists) {
-          return UserModel.fromFirestore(doc);
+        print(
+            '[DEBUG] authStateChanges: Buscando usuario con UID: \'${firebaseUser.uid}\'');
+        final querySnapshot = await _firestore
+            .collection('users')
+            .where('uid', isEqualTo: firebaseUser.uid)
+            .limit(1)
+            .get();
+        print(
+            '[DEBUG] authStateChanges: Docs encontrados: \'${querySnapshot.docs.length}\'');
+        if (querySnapshot.docs.isNotEmpty) {
+          print(
+              '[DEBUG] authStateChanges: Data: \'${querySnapshot.docs.first.data()}\'');
+          try {
+            final user = UserModel.fromFirestore(querySnapshot.docs.first);
+            print(
+                '[DEBUG] authStateChanges: UserModel parseado correctamente: \'${user.uid}\'');
+            return user;
+          } catch (e) {
+            print('[DEBUG] authStateChanges: Error parseando UserModel: $e');
+            return null;
+          }
         } else {
-          // Si no existe en Firestore, crear usuario básico
+          print(
+              '[DEBUG] authStateChanges: No se encontró usuario en Firestore');
           return UserModel.fromFirebaseUser(firebaseUser);
         }
       } catch (e) {
-        AppLogger.error("Error obteniendo datos de usuario", e);
+        print('[DEBUG] authStateChanges: Error: $e');
         return UserModel.fromFirebaseUser(firebaseUser);
       }
     });
@@ -60,7 +74,7 @@ class AuthRepository {
   }) async {
     try {
       AppLogger.auth("Intentando login para: $email");
-      
+
       final userCredential = await _auth.signInWithEmailAndPassword(
         email: email,
         password: password,
@@ -81,7 +95,7 @@ class AuthRepository {
           .where('uid', isEqualTo: user.uid)
           .limit(1)
           .get();
-      
+
       if (querySnapshot.docs.isNotEmpty) {
         return UserModel.fromFirestore(querySnapshot.docs.first);
       } else {
@@ -105,24 +119,26 @@ class AuthRepository {
   }) async {
     try {
       AppLogger.auth("Intentando registro para: $email");
-      
+      print('[DEBUG] Iniciando registro para: $email');
+
       final userCredential = await _auth.createUserWithEmailAndPassword(
         email: email,
         password: password,
       );
+      print('[DEBUG] Usuario creado en Firebase Auth');
 
       final user = userCredential.user;
       if (user == null) {
         throw AuthException('Error al crear usuario');
       }
+      print('[DEBUG] UID del usuario: ${user.uid}');
 
       // Actualizar display name si se proporciona
       if (displayName != null) {
+        print('[DEBUG] Actualizando display name: $displayName');
         await user.updateDisplayName(displayName);
+        print('[DEBUG] Display name actualizado');
       }
-
-      // Obtener información del dispositivo
-      final deviceInfo = await _deviceInfoService.getDeviceInfo();
 
       // Crear información del perfil básica
       final profileInfo = <String, dynamic>{
@@ -147,10 +163,11 @@ class AuthRepository {
         'businessEmail': email,
       };
 
-      // Generar código de referido único
-      final referralCode = user.uid.substring(0, 8);
+      // Generar código de referido único (usar el UID completo)
+      final referralCode = user.uid;
 
       // Crear usuario completo
+      print('[DEBUG] Creando UserModel');
       final userModel = UserModel(
         uid: user.uid,
         email: user.email ?? '',
@@ -165,42 +182,39 @@ class AuthRepository {
         isActive: true,
         profileInfo: profileInfo,
         preferences: preferences,
-        deviceInfo: deviceInfo['platform']?.toString(),
-        appVersion: deviceInfo['appVersion']?.toString(),
+        deviceInfo: 'Android', // Valor fijo por ahora
+        appVersion: '1.0.0', // Valor fijo por ahora
         referralCode: referralCode,
         referralCount: 0,
       );
+      print('[DEBUG] UserModel creado');
 
       // Crear ID del documento con formato OwnerName_UID
-      final documentId = '${displayName?.replaceAll(' ', '_') ?? 'User'}_${user.uid}';
+      final documentId =
+          '${displayName?.replaceAll(' ', '_') ?? 'User'}_${user.uid}';
 
       // Guardar en Firestore con información esencial
       print('[DEBUG] Guardando usuario en Firestore:');
       print('[DEBUG] Colección: users');
       print('[DEBUG] documentId: \'${documentId}\'');
-      await _firestore.collection('users').doc(documentId).set(userModel.toFirestore());
+      print('[DEBUG] Datos a guardar: ${userModel.toFirestore()}');
 
-      // Crear subcolección para historial de sesiones (solo información básica)
-      await _firestore.collection('users').doc(documentId).collection('sessions').add({
-        'loginAt': Timestamp.fromDate(DateTime.now()),
-        'platform': deviceInfo['platform'],
-        'appVersion': deviceInfo['appVersion'],
-      });
-
-      // Crear subcolección para actividad (solo registro inicial)
-      await _firestore.collection('users').doc(documentId).collection('activity').add({
-        'type': 'registration',
-        'timestamp': Timestamp.fromDate(DateTime.now()),
-        'description': 'Usuario registrado exitosamente',
-      });
+      await _firestore
+          .collection('users')
+          .doc(documentId)
+          .set(userModel.toFirestore());
+      print('[DEBUG] Usuario guardado en Firestore exitosamente');
 
       AppLogger.auth("Usuario registrado exitosamente: $email");
+      print('[DEBUG] Registro completado exitosamente');
       return userModel;
     } on FirebaseAuthException catch (e) {
       AppLogger.error("Error de Firebase Auth en registro", e);
+      print('[DEBUG] Error de Firebase Auth: ${e.code} - ${e.message}');
       throw _handleFirebaseAuthException(e);
     } catch (e) {
       AppLogger.error("Error inesperado en registro", e);
+      print('[DEBUG] Error inesperado: $e');
       throw AuthException('Error inesperado: $e');
     }
   }
@@ -221,17 +235,18 @@ class AuthRepository {
   Future<bool> testFirebaseConnection() async {
     try {
       AppLogger.auth("Probando conectividad con Firebase Auth...");
-      
+
       // Verificar que Firebase Auth esté disponible
       if (_auth == null) {
         AppLogger.error("Firebase Auth es null");
         return false;
       }
-      
+
       // Verificar que Firebase esté inicializado
       final currentUser = _auth.currentUser;
-      AppLogger.auth("Firebase Auth disponible. Usuario actual: ${currentUser?.email ?? 'ninguno'}");
-      
+      AppLogger.auth(
+          "Firebase Auth disponible. Usuario actual: ${currentUser?.email ?? 'ninguno'}");
+
       return true;
     } catch (e) {
       AppLogger.error("Error probando conectividad con Firebase Auth", e);
@@ -242,21 +257,23 @@ class AuthRepository {
   /// Enviar email de recuperación de contraseña
   Future<void> sendPasswordResetEmail(String email) async {
     try {
-      AppLogger.auth("Iniciando proceso de envío de email de recuperación a: $email");
-      
+      AppLogger.auth(
+          "Iniciando proceso de envío de email de recuperación a: $email");
+
       // Probar conectividad con Firebase Auth
       final isConnected = await testFirebaseConnection();
       if (!isConnected) {
-        throw AuthException('Error de configuración: No se puede conectar con Firebase Auth');
+        throw AuthException(
+            'Error de configuración: No se puede conectar con Firebase Auth');
       }
-      
+
       AppLogger.auth("Firebase Auth disponible, enviando email...");
-      
+
       // Enviar el email de recuperación
       await _auth.sendPasswordResetEmail(email: email);
-      
+
       AppLogger.auth("Email de recuperación enviado exitosamente a: $email");
-      
+
       // Registrar en Firestore para auditoría
       try {
         await _firestore.collection('password_resets').add({
@@ -266,28 +283,37 @@ class AuthRepository {
         });
         AppLogger.auth("Registro de recuperación guardado en Firestore");
       } catch (firestoreError) {
-        AppLogger.warning("No se pudo guardar registro en Firestore: $firestoreError");
+        AppLogger.warning(
+            "No se pudo guardar registro en Firestore: $firestoreError");
         // No lanzar excepción aquí ya que el email se envió correctamente
       }
-      
     } on FirebaseAuthException catch (e) {
-      AppLogger.error("Error de Firebase Auth enviando email de recuperación", e);
+      AppLogger.error(
+          "Error de Firebase Auth enviando email de recuperación", e);
       AppLogger.error("Código de error: ${e.code}, Mensaje: ${e.message}");
-      
+
       // Manejar errores específicos de Firebase
       switch (e.code) {
         case 'user-not-found':
-          throw AuthException('No existe una cuenta con este correo electrónico.', code: e.code);
+          throw AuthException(
+              'No existe una cuenta con este correo electrónico.',
+              code: e.code);
         case 'invalid-email':
-          throw AuthException('Formato de correo electrónico inválido.', code: e.code);
+          throw AuthException('Formato de correo electrónico inválido.',
+              code: e.code);
         case 'too-many-requests':
-          throw AuthException('Demasiados intentos. Intente más tarde.', code: e.code);
+          throw AuthException('Demasiados intentos. Intente más tarde.',
+              code: e.code);
         case 'network-request-failed':
-          throw AuthException('Error de conexión. Verifique su internet.', code: e.code);
+          throw AuthException('Error de conexión. Verifique su internet.',
+              code: e.code);
         case 'operation-not-allowed':
-          throw AuthException('La recuperación de contraseña está deshabilitada.', code: e.code);
+          throw AuthException(
+              'La recuperación de contraseña está deshabilitada.',
+              code: e.code);
         default:
-          throw AuthException('Error enviando email: ${e.message}', code: e.code);
+          throw AuthException('Error enviando email: ${e.message}',
+              code: e.code);
       }
     } catch (e) {
       AppLogger.error("Error inesperado enviando email de recuperación", e);
@@ -302,17 +328,17 @@ class AuthRepository {
   }) async {
     try {
       AppLogger.auth("Actualizando información del negocio para: $uid");
-      
+
       // Buscar el documento del usuario por UID
       final querySnapshot = await _firestore
           .collection('users')
           .where('uid', isEqualTo: uid)
           .limit(1)
           .get();
-      
+
       if (querySnapshot.docs.isNotEmpty) {
         final documentId = querySnapshot.docs.first.id;
-        
+
         await _firestore.collection('users').doc(documentId).update({
           'businessInfo': businessInfo,
         });
@@ -334,17 +360,17 @@ class AuthRepository {
   }) async {
     try {
       AppLogger.auth("Actualizando información del perfil para: $uid");
-      
+
       // Buscar el documento del usuario por UID
       final querySnapshot = await _firestore
           .collection('users')
           .where('uid', isEqualTo: uid)
           .limit(1)
           .get();
-      
+
       if (querySnapshot.docs.isNotEmpty) {
         final documentId = querySnapshot.docs.first.id;
-        
+
         await _firestore.collection('users').doc(documentId).update({
           'profileInfo': profileInfo,
         });
@@ -366,17 +392,17 @@ class AuthRepository {
   }) async {
     try {
       AppLogger.auth("Actualizando preferencias para: $uid");
-      
+
       // Buscar el documento del usuario por UID
       final querySnapshot = await _firestore
           .collection('users')
           .where('uid', isEqualTo: uid)
           .limit(1)
           .get();
-      
+
       if (querySnapshot.docs.isNotEmpty) {
         final documentId = querySnapshot.docs.first.id;
-        
+
         await _firestore.collection('users').doc(documentId).update({
           'preferences': preferences,
         });
@@ -400,10 +426,10 @@ class AuthRepository {
           .where('uid', isEqualTo: uid)
           .limit(1)
           .get();
-      
+
       if (querySnapshot.docs.isNotEmpty) {
         final documentId = querySnapshot.docs.first.id;
-        
+
         await _firestore.collection('users').doc(documentId).update({
           'lastLoginAt': Timestamp.fromDate(DateTime.now()),
         });
@@ -418,17 +444,22 @@ class AuthRepository {
   AuthException _handleFirebaseAuthException(FirebaseAuthException e) {
     switch (e.code) {
       case 'user-not-found':
-        return AuthException('Usuario no registrado. Verifique su correo.', code: e.code);
+        return AuthException('Usuario no registrado. Verifique su correo.',
+            code: e.code);
       case 'wrong-password':
-        return AuthException('Contraseña incorrecta. Intente nuevamente.', code: e.code);
+        return AuthException('Contraseña incorrecta. Intente nuevamente.',
+            code: e.code);
       case 'invalid-email':
         return AuthException('Formato de correo inválido.', code: e.code);
       case 'user-disabled':
-        return AuthException('Esta cuenta ha sido deshabilitada.', code: e.code);
+        return AuthException('Esta cuenta ha sido deshabilitada.',
+            code: e.code);
       case 'too-many-requests':
-        return AuthException('Demasiados intentos fallidos. Intente más tarde.', code: e.code);
+        return AuthException('Demasiados intentos fallidos. Intente más tarde.',
+            code: e.code);
       case 'network-request-failed':
-        return AuthException('Error de conexión. Verifique su internet.', code: e.code);
+        return AuthException('Error de conexión. Verifique su internet.',
+            code: e.code);
       case 'email-already-in-use':
         return AuthException('Este correo ya está registrado.', code: e.code);
       case 'weak-password':
@@ -436,25 +467,138 @@ class AuthRepository {
       case 'operation-not-allowed':
         return AuthException('El registro está deshabilitado.', code: e.code);
       default:
-        return AuthException('Error de autenticación: ${e.message}', code: e.code);
+        return AuthException('Error de autenticación: ${e.message}',
+            code: e.code);
     }
   }
 
-  /// Buscar usuario por código de referido
-  Future<UserModel?> getUserByReferralCode(String code) async {
-    final query = await _firestore.collection('users').where('referralCode', isEqualTo: code).limit(1).get();
-    if (query.docs.isNotEmpty) {
-      return UserModel.fromFirestore(query.docs.first);
+  /// Obtener datos actualizados del usuario actual (sin requerir contraseña)
+  Future<UserModel> refreshCurrentUserData() async {
+    try {
+      final firebaseUser = _auth.currentUser;
+      if (firebaseUser == null) {
+        throw AuthException('No hay usuario autenticado');
+      }
+
+      // Buscar datos actualizados en Firestore
+      final querySnapshot = await _firestore
+          .collection('users')
+          .where('uid', isEqualTo: firebaseUser.uid)
+          .limit(1)
+          .get();
+
+      if (querySnapshot.docs.isNotEmpty) {
+        return UserModel.fromFirestore(querySnapshot.docs.first);
+      } else {
+        return UserModel.fromFirebaseUser(firebaseUser);
+      }
+    } catch (e) {
+      AppLogger.error("Error refrescando datos del usuario", e);
+      throw AuthException('Error refrescando datos: $e');
+    }
+  }
+
+  /// Buscar usuario por UID (código de referido)
+  Future<UserModel?> getUserByUid(String uid) async {
+    // Buscar por query usando el campo uid
+    final querySnapshot = await _firestore
+        .collection('users')
+        .where('uid', isEqualTo: uid)
+        .limit(1)
+        .get();
+
+    if (querySnapshot.docs.isNotEmpty) {
+      return UserModel.fromFirestore(querySnapshot.docs.first);
     }
     return null;
   }
 
-  /// Sumar uno al referralCount de un usuario por código
-  Future<void> incrementReferralCount(String code) async {
-    final user = await getUserByReferralCode(code);
-    if (user != null) {
-      final docRef = _firestore.collection('users').doc(user.uid);
-      await docRef.update({'referralCount': FieldValue.increment(1)});
+  /// Usar un código de referido (UID real)
+  Future<void> useReferralCode(
+      {required UserModel currentUser, required String code}) async {
+    print('[DEBUG] useReferralCode: Iniciando proceso');
+    print('[DEBUG] useReferralCode: Usuario actual UID: ${currentUser.uid}');
+    print('[DEBUG] useReferralCode: Código a usar: $code');
+    print(
+        '[DEBUG] useReferralCode: Usuario ya usó código: ${currentUser.usedReferralCode}');
+
+    // No permitir usar el propio UID
+    if (currentUser.uid == code) {
+      print(
+          '[DEBUG] useReferralCode: Error - Usuario intenta usar su propio código');
+      throw AuthException('No puedes usar tu propio código de referido');
     }
+
+    // No permitir usar más de un código
+    if (currentUser.usedReferralCode != null) {
+      print('[DEBUG] useReferralCode: Error - Usuario ya usó un código');
+      throw AuthException('Ya usaste un código de referido');
+    }
+
+    // Buscar el usuario dueño del UID
+    print('[DEBUG] useReferralCode: Buscando usuario dueño del código');
+    final referredUser = await getUserByUid(code);
+    if (referredUser == null) {
+      print(
+          '[DEBUG] useReferralCode: Error - Código no válido, usuario no encontrado');
+      throw AuthException('Código de referido no válido');
+    }
+    print(
+        '[DEBUG] useReferralCode: Usuario dueño encontrado: ${referredUser.email}');
+
+    // Buscar el documento del usuario actual por UID
+    print('[DEBUG] useReferralCode: Buscando documento del usuario actual');
+    final currentUserQuery = await _firestore
+        .collection('users')
+        .where('uid', isEqualTo: currentUser.uid)
+        .limit(1)
+        .get();
+
+    if (currentUserQuery.docs.isEmpty) {
+      print(
+          '[DEBUG] useReferralCode: Error - Usuario actual no encontrado en Firestore');
+      throw AuthException('Usuario actual no encontrado en Firestore');
+    }
+    print(
+        '[DEBUG] useReferralCode: Documento del usuario actual encontrado: ${currentUserQuery.docs.first.id}');
+
+    // Buscar el documento del usuario referido por UID
+    print('[DEBUG] useReferralCode: Buscando documento del usuario referido');
+    final referredUserQuery = await _firestore
+        .collection('users')
+        .where('uid', isEqualTo: referredUser.uid)
+        .limit(1)
+        .get();
+
+    if (referredUserQuery.docs.isEmpty) {
+      print(
+          '[DEBUG] useReferralCode: Error - Usuario referido no encontrado en Firestore');
+      throw AuthException('Usuario referido no encontrado en Firestore');
+    }
+    print(
+        '[DEBUG] useReferralCode: Documento del usuario referido encontrado: ${referredUserQuery.docs.first.id}');
+
+    // Actualizar el usuario actual con el código usado
+    print(
+        '[DEBUG] useReferralCode: Actualizando usuario actual con código usado');
+    await _firestore
+        .collection('users')
+        .doc(currentUserQuery.docs.first.id)
+        .update({
+      'usedReferralCode': code,
+    });
+    print('[DEBUG] useReferralCode: Usuario actual actualizado');
+
+    // Sumar uno al referralCount del dueño del UID
+    print(
+        '[DEBUG] useReferralCode: Incrementando contador de referidos del dueño');
+    await _firestore
+        .collection('users')
+        .doc(referredUserQuery.docs.first.id)
+        .update({
+      'referralCount': FieldValue.increment(1),
+    });
+    print('[DEBUG] useReferralCode: Contador de referidos incrementado');
+    print('[DEBUG] useReferralCode: Proceso completado exitosamente');
   }
-} 
+}

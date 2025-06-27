@@ -57,8 +57,30 @@ Future<void> actualizarReferidosParaUsuariosAntiguos() async {
     final data = doc.data();
     if (!data.containsKey('referralCode')) {
       await doc.reference.update({
-        'referralCode': doc.id.substring(0, 8),
+        'referralCode': data['uid'] ?? doc.id,
         'referralCount': 0,
+      });
+    }
+  }
+}
+
+Future<void> corregirCodigosDeReferidoExistentes() async {
+  final users = await FirebaseFirestore.instance.collection('users').get();
+  for (final doc in users.docs) {
+    final data = doc.data();
+    final currentReferralCode = data['referralCode'] as String?;
+    final uid = data['uid'] as String?;
+
+    if (currentReferralCode != null &&
+        uid != null &&
+        currentReferralCode != uid) {
+      print(
+          '[DEBUG] Corrigiendo código de referido para usuario: ${data['email']}');
+      print('[DEBUG] Código actual: $currentReferralCode');
+      print('[DEBUG] Nuevo código (UID): $uid');
+
+      await doc.reference.update({
+        'referralCode': uid,
       });
     }
   }
@@ -66,7 +88,7 @@ Future<void> actualizarReferidosParaUsuariosAntiguos() async {
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  
+
   // Load environment variables
   try {
     await EnvConfig.load();
@@ -74,7 +96,7 @@ void main() async {
   } catch (e) {
     AppLogger.warning("Could not load .env file, using default values: $e");
   }
-  
+
   // Initialize dependency injection
   try {
     await DependencyInjection.init();
@@ -82,12 +104,12 @@ void main() async {
   } catch (e) {
     AppLogger.error("Error initializing dependency injection", e);
   }
-  
+
   // Initialize Firebase with dynamic configuration
   try {
     await FirebaseConfig.initializeApp();
     AppLogger.success("Firebase initialized successfully");
-    
+
     // Log Firebase configuration info for debugging
     final firebaseInfo = FirebaseConfig.debugInfo;
     AppLogger.info("Firebase configuration: $firebaseInfo");
@@ -95,9 +117,10 @@ void main() async {
     AppLogger.error("Error initializing Firebase", e);
     // Continue app execution even if Firebase fails
   }
-  
+
   await actualizarReferidosParaUsuariosAntiguos();
-  
+  await corregirCodigosDeReferidoExistentes();
+
   runApp(const MyApp());
 }
 
@@ -106,47 +129,32 @@ final _router = GoRouter(
   initialLocation: '/login',
   routes: [
     // Auth routes
+    GoRoute(path: '/login', builder: (context, state) => const LoginScreen()),
+    GoRoute(path: '/signup', builder: (context, state) => const SignupPage()),
     GoRoute(
-      path: '/login', 
-      builder: (context, state) => const LoginScreen()
-    ),
+        path: '/forgot_password',
+        builder: (context, state) => const ForgotPasswordPage()),
     GoRoute(
-      path: '/signup', 
-      builder: (context, state) => const SignupPage()
-    ),
-    GoRoute(
-      path: '/forgot_password', 
-      builder: (context, state) => const ForgotPasswordPage()
-    ),
-    GoRoute(
-      path: '/user_details', 
-      builder: (context, state) => const UserDetailsForm()
-    ),
-    
+        path: '/user_details',
+        builder: (context, state) => const UserDetailsForm()),
+
     // Main routes
-    GoRoute(
-      path: '/home', 
-      builder: (context, state) => const HomePage()
-    ),
-    
+    GoRoute(path: '/home', builder: (context, state) => const HomePage()),
+
     // Sales routes
     GoRoute(
-      path: '/boletas_facturas',
-      builder: (context, state) => const BoletasFacturasPage()
-    ),
+        path: '/boletas_facturas',
+        builder: (context, state) => const BoletasFacturasPage()),
     GoRoute(
-      path: '/boleta_form',
-      builder: (context, state) => const BoletaFormPage()
-    ),
+        path: '/boleta_form',
+        builder: (context, state) => const BoletaFormPage()),
     GoRoute(
-      path: '/factura_form',
-      builder: (context, state) => const FacturaFormPage()
-    ),
+        path: '/factura_form',
+        builder: (context, state) => const FacturaFormPage()),
     GoRoute(
-      path: '/sales_list',
-      builder: (context, state) => const SalesListPage()
-    ),
-    
+        path: '/sales_list',
+        builder: (context, state) => const SalesListPage()),
+
     // Inventory routes
     ShellRoute(
       builder: (context, state, child) {
@@ -157,54 +165,39 @@ final _router = GoRouter(
       },
       routes: [
         GoRoute(
-          path: '/inventory', 
-          builder: (context, state) => const InventoryPage()
-        ),
+            path: '/inventory',
+            builder: (context, state) => const InventoryPage()),
         GoRoute(
-          path: '/agregar_producto', 
-          builder: (context, state) => const AgregarProductoPage()
-        ),
+            path: '/agregar_producto',
+            builder: (context, state) => const AgregarProductoPage()),
         GoRoute(
-          path: '/listado_productos', 
-          builder: (context, state) => const ListadoProductosPage()
-        ),
+            path: '/listado_productos',
+            builder: (context, state) => const ListadoProductosPage()),
         GoRoute(
-          path: '/modificar_producto', 
-          builder: (context, state) {
-            final producto = state.extra as Producto;
-            return ModificarProductoPage(producto: producto);
-          }
-        ),
+            path: '/modificar_producto',
+            builder: (context, state) {
+              final producto = state.extra as Producto;
+              return ModificarProductoPage(producto: producto);
+            }),
       ],
     ),
-    
+
     // QR routes
-    GoRoute(
-      path: '/qr', 
-      builder: (context, state) => const QRPage()
-    ),
-    
+    GoRoute(path: '/qr', builder: (context, state) => const QRPage()),
+
     // Reports routes
+    GoRoute(path: '/reports', builder: (context, state) => const ReportPage()),
     GoRoute(
-      path: '/reports', 
-      builder: (context, state) => const ReportPage()
-    ),
+        path: '/reporte_general',
+        builder: (context, state) => const ReporteGeneral()),
     GoRoute(
-      path: '/reporte_general', 
-      builder: (context, state) => const ReporteGeneral()
-    ),
+        path: '/reporte_inventario',
+        builder: (context, state) => const ReporteInventario()),
     GoRoute(
-      path: '/reporte_inventario', 
-      builder: (context, state) => const ReporteInventario()
-    ),
+        path: '/reporte_pagos',
+        builder: (context, state) => const ReportePagos()),
     GoRoute(
-      path: '/reporte_pagos', 
-      builder: (context, state) => const ReportePagos()
-    ),
-    GoRoute(
-      path: '/reporte_pdf', 
-      builder: (context, state) => const GenerarPDF()
-    ),
+        path: '/reporte_pdf', builder: (context, state) => const GenerarPDF()),
     GoRoute(
       path: '/referidos',
       builder: (context, state) => const ReferralPage(),
@@ -322,7 +315,8 @@ class MyApp extends StatelessWidget {
         routerConfig: _router,
         builder: (context, child) {
           return PopScope(
-            canPop: _router.routerDelegate.currentConfiguration.uri.path == '/login',
+            canPop: _router.routerDelegate.currentConfiguration.uri.path ==
+                '/login',
             onPopInvoked: (didPop) async {
               if (!didPop) {
                 context.go('/home');
@@ -343,5 +337,3 @@ class MyApp extends StatelessWidget {
     );
   }
 }
-
-
